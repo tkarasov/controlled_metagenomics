@@ -1,0 +1,348 @@
+---
+title: "controlled_metagenomics"
+author: "Talia_Karasov"
+date: "12/4/2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE, warning=FALSE}
+require(knitr)
+knitr::opts_chunk$set(echo = FALSE)
+opts_chunk$set(tidy.opts=list(width.cutoff=80),tidy=TRUE, warning=FALSE)
+```
+
+## R Markdown
+
+Randomize in a tray
+```{r echo=FALSE}
+samps=read.csv("~/Dropbox/controlled_metagenomics/protocols/print_labels.csv", header=T)[,c(1:2)]
+samps<-paste(samps[,1], samps[,2])
+samps<-samps[sample(1:length(samps))]
+samps_mat1=matrix(samps[1:20], nrow=5, ncol=4)
+samps_mat2=matrix(samps[21:40], nrow=5, ncol=4)
+samps_mat3=matrix(samps[41:60],  nrow=5, ncol=4)
+samps_mat4=matrix(samps[61:80],  nrow=5, ncol=4)
+samps_mat5=matrix(samps[81:100],  nrow=5, ncol=4)
+samps_mat6=matrix(samps[101:120], nrow=5, ncol=4)
+
+
+
+write.table(samps_mat1, "~/Dropbox/controlled_metagenomics/experiments_executed/12_4_2017_table.csv", row.names=F, append=F, quote=F, col.names=F, sep=',')
+write.table(samps_mat2, "~/Dropbox/controlled_metagenomics/experiments_executed/12_4_2017_table.csv", row.names=F, append=T, quote=F, col.names=F,sep=',')
+write.table(samps_mat3, "~/Dropbox/controlled_metagenomics/experiments_executed/12_4_2017_table.csv", row.names=F, append=T, quote=F, col.names=F ,sep=',')
+write.table(samps_mat4, "~/Dropbox/controlled_metagenomics/experiments_executed/12_4_2017_table.csv", row.names=F, append=T, quote=F, col.names=F ,sep=',')
+write.table(samps_mat5, "~/Dropbox/controlled_metagenomics/experiments_executed/12_4_2017_table.csv", row.names=F, append=T, quote=F, col.names=F ,sep=',')
+write.table(samps_mat6, "~/Dropbox/controlled_metagenomics/experiments_executed/12_4_2017_table.csv", row.names=F, append=T, quote=F, col.names=F ,sep=',')
+```
+
+###Results from infection trial
+
+```{r  echo=FALSE}
+library('ggplot2')
+library('reshape2')
+library('dplyr')
+library('tidyr')
+library('RColorBrewer')
+calculate_cfu<-function(dc3000_infection){
+  dc3000_infection$No_dil=as.numeric(as.character(dc3000_infection$No_dil))*40
+  dc3000_infection$X1_10=as.numeric(as.character(dc3000_infection$X1_10))*400
+  dc3000_infection$X1_100=as.numeric(as.character(dc3000_infection$X1_100))*4000
+  dc3000_infection$X1_1000=as.numeric(as.character(dc3000_infection$X1_1000))*40000
+  dc3000_infection$X1_10000=as.numeric(as.character(dc3000_infection$X1_10000))*40000
+  dc3000_infection$Rif_KM_No_dil=as.numeric(as.character(dc3000_infection$Rif_KM_No_dil))*40
+  dc3000_infection$Rif_KM_1_10=as.numeric(as.character(dc3000_infection$Rif_KM_1_10))*400
+  dc3000_infection$Rif_KM_1_100=as.numeric(as.character(dc3000_infection$Rif_KM_1_100))*4000
+  dc3000_infection$Rif_KM_1_1000=as.numeric(as.character(dc3000_infection$Rif_KM_1_1000))*40000
+  dc3000_infection$Rif_KM_1_10000=as.numeric(as.character(dc3000_infection$Rif_KM_1_10000))*400000
+  return(dc3000_infection)
+}
+
+
+ind_row<-function(row_dc3000){
+  #print(row_dc3000)
+  if(is.numeric(row_dc3000["No_dil"]) & is.na(row_dc3000["No_dil"])==FALSE){no_rif=row_dc3000["No_dil"]}else if(is.numeric(row_dc3000['X1_10']) & is.na(row_dc3000['X1_10'])==FALSE)     no_rif=row_dc3000['X1_10'] else if(is.numeric(row_dc3000['X1_100']) & is.na(row_dc3000['X1_100'])==FALSE){no_rif=row_dc3000['X1_100']} else if(is.numeric(row_dc3000['X1_1000']) & is.na(row_dc3000['X1_1000'])==FALSE){no_rif=row_dc3000['X1_1000']} else if(as.numeric(is.numeric(row_dc3000['X1_10000'])) & is.na(row_dc3000['X1_10000'])==FALSE){no_rif=row_dc3000['X1_10000']} else(no_rif="NA")
+  if(is.numeric(row_dc3000['Rif_KM_No_dil']) & is.na(row_dc3000['Rif_KM_No_dil'])==FALSE){rif=row_dc3000['Rif_KM_No_dil']}
+  else if(is.numeric(row_dc3000['Rif_KM_1_10']) & is.na(row_dc3000['Rif_KM_1_10'])==FALSE){rif=row_dc3000['Rif_KM_1_10']}
+  else if(is.numeric(row_dc3000['Rif_KM_1_100']) & is.na(row_dc3000['Rif_KM_1_100'])==FALSE){rif=row_dc3000['Rif_KM_1_100']}
+  else if(is.numeric(row_dc3000['Rif_KM_1_1000']) & is.na(row_dc3000['Rif_KM_1_1000'])==FALSE){rif=row_dc3000['Rif_KM_1_1000']}
+  else if(is.numeric(row_dc3000['Rif_KM_1_10000']) & is.na(row_dc3000['Rif_KM_1_10000'])==FALSE){rif=row_dc3000['Rif_KM_1_10000']}
+  else(rif="NA")
+  together=c(as.numeric(no_rif), as.numeric(rif))
+  row_dc3000['final_no_rif']=together[1]
+  row_dc3000['final_rif']=together[2]
+  if(is.na(together[2])==FALSE){row_dc3000['FINAL']=together[2]} else{row_dc3000['FINAL']=together[1]}
+  return(row_dc3000)
+  #return(together)
+}
+
+dc3000_infection=read.csv("~/Dropbox/controlled_metagenomics/infection_results/5_12_2017/colony_counting_5_12_2017.csv")
+dc3000_recalculate=calculate_cfu(dc3000_infection)
+dc3000_recalculate2=sapply(dc3000_recalculate[,5:17], as.numeric)
+dc3000_val=cbind(dc3000_recalculate[,1:4],t(apply(dc3000_recalculate2, MARGIN=1, ind_row)))
+dc3000_val=dc3000_val[dc3000_val$Genotype!="NONE",]
+info_infect=dc3000_val[,c("Day","Genotype", "Replicate", "FINAL")]
+infect_plot=info_infect%>% group_by(Day, Genotype) %>% summarise(mean = mean(log10(FINAL+1), na.rm=T), se = sd(log10(FINAL+1), na.rm=T) / length(FINAL))
+
+
+#infect_sum=summarySE(info_infect, measurevar="FINAL", groupvars=c("Genotype","Day"))
+pdf("~/Dropbox/controlled_metagenomics/results_figures/dc3000_cfu.pdf")
+
+dc3000_cfu <- ggplot(infect_plot, aes(Day, mean, group=Genotype, colour=Genotype), width=.1)+geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
+    geom_point()+theme_bw()+geom_line()+theme_bw()+ylab("log10(cfu)") + scale_colour_brewer(palette = "Set1")
+dc3000_cfu
+dev.off()
+
+```
+
+
+
+###Output from run86
+```{r echo=FALSE}
+library('reshape2')
+library('dplyr')
+library('tidyr')
+library('ggplot2')
+library('RColorBrewer')
+library('lme4')
+read_stat=read.csv("~/Dropbox/controlled_metagenomics/temp_data/run_86_initial_mappings.tsv", sep='\t', header=T)
+read_stat=read_stat[read_stat$Arabidopsis_thaliana>10000,]
+read_stat[,1]=as.character(read_stat[,1])
+read_stat$ratio=read_stat$No.hits/(read_stat$Arabidopsis_thaliana+read_stat$No.hits)
+infect_plot=read_stat%>% group_by(Day, Sample) %>% summarise(mean = mean(ratio, na.rm=T), se = sd(ratio, na.rm=T) / length(ratio))
+pdf("~/Dropbox/controlled_metagenomics/results_figures/run86_unmapped_athal.pdf")
+ggplot(infect_plot, aes(Day, mean, group=Sample, colour=Sample), width=.1)+geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
+    geom_point()+theme_bw()+geom_line()+theme_bw()+ylab("No hits/(All reads)") + scale_colour_brewer(palette = "Set2")
+dev.off()
+
+
+```
+
+```{R, echo=FALSE}
+library(reshape2)
+library('dplyr')
+library('tidyr')
+library(ggplot2)
+library(RColorBrewer)
+
+replace_rr <- function(rr){
+  if(is.na(rr)) return(NA)
+  else if(rr=="I") return(0)
+  else if(rr=="II") return(1)
+  else if(rr=="III") return(2)
+  else if(rr=="IV") return(3)
+  else if(rr=="V") return(4)
+  else if(rr=="VI") return(6)
+  else return(NA)
+}
+
+total_count=read.table("/Users/tkarasov/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/dc3000_infections/total_read_count.txt", sep=',', row.names=1, header=T)
+contents=read.table("/Users/tkarasov/work_main/abt6_projects9/metagenomic_controlled/data/metagenome_tables/dc3000_all_compared.txt", row.names=1, header=T, sep="\t", check.names=FALSE)
+content_empty=contents[-c(1),]
+content_graph=sweep(content_empty, 2, colSums(content_empty),'/')
+contents['total',]=rowSums(total_count[colnames(contents),c(1,2)])
+temp=contents['Pseudomonas',]/contents['total',]#contents['Bacteria',]/contents['total',]
+contents['perc_bacteria',]=temp
+write.table(contents, "~/Dropbox/controlled_metagenomics/metagenome_data/DC3000_genus_table_20_2_2018.txt", sep='\t', col.names =T, row.names = T, quote = F)
+
+#prepare to graph samples
+dc3000 <- data.frame(perc_bacteria=as.numeric(contents['perc_bacteria',]), samp=colnames(contents))
+dc3000$treatment <- sapply( strsplit(sapply(strsplit(colnames(contents), "-"), `[`, 1), "_"), `[`, 1)
+dc3000$day <- sapply( strsplit(sapply(strsplit(colnames(contents), "-"), `[`, 1), "_R"), `[`, 2)
+dc3000$day <- sapply(dc3000$day, replace_rr)
+dc3000$replicate <- as.numeric(as.character(sapply(strsplit(colnames(contents), "-"), `[`, 2)))
+dc3000 <-dc3000[dc3000$treatment!="control",]
+infect_plot=dc3000%>% group_by(day, treatment) %>% summarise(mean = mean((perc_bacteria), na.rm=T), se = sd((perc_bacteria), na.rm=T) / length(perc_bacteria)) 
+
+
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/dc3000_metagenome_mapped.pdf")
+#ggplot(dc3000, aes(day, perc_bacteria, colour=treatment), width=.1)+geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
+#    geom_point()+theme_bw()+geom_line()+theme_bw()+ylab("No hits/(All reads)") + scale_colour_brewer(palette = "Set2")
+#dev.off()
+
+
+dc3000_metagenome <-ggplot(infect_plot, aes(day, mean, group=treatment, colour=treatment), width=.1)+geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
+    geom_point()+theme_bw()+geom_line()+theme_bw()+ylab("Pseudomonas reads/All reads") + scale_colour_brewer(palette = "Set1")
+
+dc3000_metagenome
+dev.off()
+
+```
+
+
+```{R}
+library('reshape2')
+library('dplyr')
+library('tidyr')
+library('ggplot2')
+library('RColorBrewer')
+
+
+#Now for building a model to link the abundance of Pseudomonas to metagenomic data
+#info_infect is colony
+#dc3000 is metagenome
+colnames(dc3000) = c("perc_bacteria", "sample", "Genotype","Day","Replicate")
+dc3000$Genotype= as.factor(trimws(dc3000$Genotype))
+info_infect$Genotype=trimws(info_infect$Genotype)
+info_infect$Day=as.numeric(as.character(info_infect$Day))
+col_met<-merge(dc3000, info_infect, all.x=T, all.y=T)
+
+#predicted values
+response <- log10(col_met$FINAL+1)
+lm.full_log <- lm(response ~ log10((perc_bacteria*100+1)) , data=col_met)  
+fin_pred <- data.frame(final_pre= 10^predict(lm.full_log, col_met), x=(col_met$perc_bacteria*100+1) )
+lm.basic <- lm(response ~ (perc_bacteria) , data=col_met) 
+AIC(lm.full_log, lm.basic)
+
+#predict
+inter <- coef(lm.full_log)[1]
+beta <- coef(lm.full_log)[2]
+
+#plot
+pdf("~/Dropbox/controlled_metagenomics/results_figures/dc3000_cfu_metagenom_regression.pdf")
+theme_set(theme_bw())
+cfu_meta_relate <- qplot(log10(perc_bacteria*100+1), log10(FINAL+1), data=col_met)+ 
+  ylab("CFU/disk") + xlab("% Reads Pseudomonas") + 
+  geom_abline( slope = beta, intercept = inter, color="red") +
+  scale_x_continuous(breaks=c(0, 0.5, 1, 1.5, 1.75, 1.9, 2), labels=function(x)round(10^x)) + scale_y_continuous(breaks=c(0,2,4,6,8), labels=function(x) format(10^x, scientific = FALSE))
+
+cfu_meta_relate
+dev.off()
+
+#now some predictions
+ran <- seq(0, 100, by=1)
+log_count<- log10(ran) * beta + inter
+real_value <- 10^log_count
+together <- data.frame(y=real_value, x_ran=ran)
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/cfu_predictions.pdf")
+options(scipen=5)
+predicted <-ggplot(data=together, aes(x=x_ran, y=y)) + geom_smooth(se=FALSE) + ylab("CFU/disk") + xlab("% Reads Pseudomonas") + scale_y_log10()
+predicted
+dev.off()
+
+
+
+#let's do some predictions for our samples
+genus_table <- read.table("~/Dropbox/controlled_metagenomics/metagenome_data/German_192/totalReads_bacteriaReads.txt", header=T, row.names=1)
+genus_table$percent_bac <- genus_table$Bacteria_reads/genus_table$Total_reads*100
+predict_bac <- 10^log10(genus_table$percent_bac) * beta + inter
+
+g_t <- apply(t(genus_table), 2, as.numeric)
+rownames(g_t) = colnames(genus_table)
+#colnames(g_t) = t(genus_table)[1,]
+met_table <- read.table("~/Dropbox/controlled_metagenomics/metagenome_data/German_192/genus_counts.txt", header=T, row.names=1, sep='\t')
+gen_met <- rbind(met_table, g_t)
+gen_met <- gen_met[order(rowSums(gen_met), decreasing=TRUE),]
+pseudomonas = gen_met['Pseudomonas',]/gen_met['Total_reads',]
+sphingo = gen_met['Sphingomonas',]/gen_met['Total_reads',]
+pedo = gen_met['Pedobacter',]/gen_met['Total_reads',]
+top = t(gen_met[c('Pseudomonas', 'Sphingomonas'),]) #/gen_met['Total_reads',]
+top = melt(apply( top, MARGIN = 2, function(x)x/gen_met['Total_reads',]))
+#create a matrix that records the highest load a species ever achieved
+max_perc <- data.frame(species=rownames(gen_met), max_val=numeric(length(rownames(gen_met))))
+
+for(i in 3:length(rownames(gen_met))){
+  maxt=max(gen_met[i,]/gen_met['Total_reads',])
+  max_perc[i,2]=maxt
+  #new_row=
+}
+
+#now take metagenome data from controlled experiment to map on
+ev_only= infect_plot[infect_plot$treatment=="EV",]
+d0 = ev_only[ev_only$day==0,]$mean
+d1 = ev_only[ev_only$day==1,]$mean
+d2 = ev_only[ev_only$day==2,]$mean
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/our_samples_percentage.pdf")
+#predicted+geom_point(data=null, aes(x=log10(genus_table$percent_bac), y=predict_bac))
+#of_interest <- data.frame( perc=log10(max_perc$max_val + 1), pred = log10(max_perc$max_val*100 + 1) * beta +inter, species =) 
+#ggplot(data=of_interest, aes(x=perc, y=prec))
+hist_max <- ggplot(data=max_perc[3:dim(max_perc)[1],], aes(x=max_val)) + geom_histogram(color="black", fill="lightblue") + 
+  scale_x_log10(breaks=c(0, 0.0001, .001, .01, .05, .1, .3), labels=c(0, 0.0001, .001, .01, .05, .1, .3)*100) + 
+  xlab("Percentage of reads classified to focal taxon") + 
+  geom_vline(xintercept=d0, col= "RED") + geom_vline(xintercept=d1, col= "RED") + 
+  geom_vline(xintercept=d2, col= "RED")
+hist_max
+dev.off()
+
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/pseudomonas_sphingo_hist.pdf")
+ggplot(data=top, aes(x=value, fill=L1)) + geom_histogram(alpha=0.5 , position = 'identity', color="black") + 
+  scale_x_log10(breaks=c(0, 0.0001, .001, .01, .05, .1, .3), labels=c(0, 0.0001, .001, .01, .05, .1, .3)*100) + scale_fill_brewer(palette = "Paired")+
+  geom_vline(xintercept=d0, col= "RED") + geom_vline(xintercept=d1, col= "RED") + geom_vline(xintercept=d2, col= "RED") + xlab("Percentage reads assigned to taxon")
+
+dev.off()
+```
+
+
+
+
+#g + geom_point() + 
+#  geom_smooth(method="lm", se=F) + geom_line( color='red', data=fin_pred, aes(x=x, y=final_pre))
+#bc <- boxcox((FINAL+0.0001) ~ (perc_bacteria) , data=col_met)
+#bc_lam <- bc$x[which(bc$y==max(bc$y))]
+#lm.new <- lm( ((FINAL+0.0001)^bc_lam-1)/bc_lam ~ perc_bacteria, data=col_met)
+
+'''bc <- boxCox(lm.full, family="yjPower", plotit = TRUE)
+bc_lam <- bc$x[which(bc$y==max(bc$y))]
+depvar.transformed <- yjPower(col_met$FINAL, bc_lam)
+#now transform the data
+depvar.transformed <- yjPower(col_met$perc_bacteria, bc_lam)
+glm.mod <- glm((depvar.transformed) ~ (col_met$FINAL), family=gaussian(link="log"))
+
+#check residuals
+qqnorm(resid(lm.full))
+qqline(resid(lm.full))
+'''
+
+
+
+
+
+
+
+
+#HPA infection data. Plants infected in timeseries with Days 0,2,5,11 timepoints. A few samples (4 for controls, and 6 for non-controls). Initial set from just day five
+
+
+```{r}
+library(reshape2)
+library('dplyr')
+library('tidyr')
+library(ggplot2)
+library(RColorBrewer)
+
+
+total_count_hpa=read.table("/Users/tkarasov/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections/hpa_total_read_count.txt", sep=',', row.names=1, header=T)
+contents_hpa=read.table("/Users/tkarasov/work_main/abt6_projects9/metagenomic_controlled/data/metagenome_tables/hpa_all_compared.txt", row.names=1, header=T, sep="\t", check.names=FALSE)
+content_empty=contents_hpa[-c(1),]
+content_graph=sweep(content_empty, 2, colSums(content_empty),'/')
+contents_hpa['total',]=rowSums(total_count_hpa[colnames(contents_hpa),c(1,2)])
+temp=contents_hpa['Oomycetes',]/contents_hpa['total',]
+contents_hpa['perc_oomycete',]=temp
+write.table(contents_hpa, "~/Dropbox/controlled_metagenomics/metagenome_data/hpa_genus_table_06_03_2018.txt", sep='\t', col.names =T, row.names = T, quote = F)
+
+#prepare to graph samples
+hpa <- data.frame(perc_oom=as.numeric(contents_hpa['perc_oomycete',]), samp=colnames(contents_hpa))
+hpa$treatment <- unlist(strsplit(colnames(contents_hpa), "-"))[c(FALSE, TRUE, FALSE)]
+hpa$day <- as.numeric(as.character(substr(unlist(strsplit(colnames(contents_hpa), "-"))[c(TRUE, FALSE, FALSE)], 2, 4)))
+infect_plot=hpa%>% group_by(day, treatment) %>% summarise(mean = mean((perc_oom), na.rm=T), se = sd((perc_oom), na.rm=T) / length(perc_oom)) 
+
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/hpa_metagenome_mapped.pdf")
+#ggplot(dc3000, aes(day, perc_bacteria, colour=treatment), width=.1)+geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
+#    geom_point()+theme_bw()+geom_line()+theme_bw()+ylab("No hits/(All reads)") + scale_colour_brewer(palette = "Set2")
+#dev.off()
+
+
+ggplot(infect_plot, aes(day, mean, group=treatment, colour=treatment), width=.1, )+geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
+    geom_point()+theme_bw()+geom_line()+theme_bw()+ylab("Oomycete reads/All reads") + scale_colour_brewer(palette = "Set2")
+dev.off()
+
+
+```
+
+

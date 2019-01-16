@@ -1,0 +1,198 @@
+---
+title: "field_load"
+author: "Talia_Karasov"
+date: "4/2/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(knitr)
+knitr::opts_chunk$set(echo = FALSE)
+opts_chunk$set(tidy.opts=list(width.cutoff=80),tidy=TRUE, warning=FALSE)
+library('ggplot2')
+library(dplyr)
+```
+
+The goal of this script is to analyze the metagenome tables gernated from the Swedish samples and the German samples
+
+
+```{r echo=FALSE}
+swedish = read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/metagenome_tables/swedish_compared.txt", header = T, row.names = 1)
+swedish_ratio = read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/swedish_samples/total_read_count.txt", sep=',', row.names = 1)
+rownames(swedish_ratio) = sub( "-", ".", rownames(swedish_ratio))
+colnames(swedish_ratio) = c("mapped", "unmapped")
+swedish_ratio = t(swedish_ratio)
+swedish = rbind(swedish, swedish_ratio[,colnames(swedish)])
+swedish['Bacterial_load',] = as.numeric(as.character(swedish['Bacteria',]/(swedish['mapped',]+swedish['unmapped',])))
+swedish['Eukaryote_load',] = as.numeric(as.character(swedish['Eukaryota',]/(swedish['mapped',]+swedish['unmapped',])))
+swedish['Pseudomonas_load',] = as.numeric(as.character(swedish['Pseudomonas',]/(swedish['mapped',]+swedish['unmapped',])))
+swedish['Oomycete_load',] = as.numeric(as.character(swedish['Oomycetes',]/(swedish['mapped',]+swedish['unmapped',])))
+swedish['population',] = 'swedish'
+```
+
+```{r  echo=FALSE}
+german = read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/metagenome_tables/german_compared.txt", header = T, row.names = 1)
+german_ratio = read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/german_samples/total_read_count.txt", sep=',', row.names = 1)
+rownames(german_ratio) = sub( "-", ".", rownames(german_ratio))
+colnames(german_ratio) = c("mapped", "unmapped")
+german_ratio = t(german_ratio)
+german = rbind(german, german_ratio[,colnames(german)])
+german['Bacterial_load',] = as.numeric(as.character(german['Bacteria',]/(german['mapped',]+german['unmapped',])))
+german['Eukaryote_load',] = as.numeric(as.character(german['Eukaryota',]/(german['mapped',]+german['unmapped',])))
+german['Oomycete_load',] =  as.numeric(as.character(german['Oomycetes',]/(german['mapped',]+german['unmapped',])))
+german['Pseudomonas_load',] = as.numeric(as.character(german['Pseudomonas',]/(german['mapped',]+german['unmapped',])))
+german['population',] = 'german'
+```
+
+
+
+Infection trials
+```{r echo=FALSE}
+library('dplyr')
+replace_rr <- function(rr){
+  if(is.na(rr)) return(NA)
+  else if(rr=="I") return(0)
+  else if(rr=="II") return(1)
+  else if(rr=="III") return(2)
+  else if(rr=="IV") return(3)
+  else if(rr=="V") return(4)
+  else if(rr=="VI") return(6)
+  else return(NA)
+}
+
+
+contents=read.table("~/Dropbox/controlled_metagenomics/metagenome_data/DC3000_genus_table_20_2_2018.txt", sep='\t')
+dc3000 <- data.frame(perc_bacteria=as.numeric(contents['perc_bacteria',]), samp=colnames(contents))
+dc3000$treatment <- sapply( strsplit(sapply(strsplit(as.character(colnames(contents)), "-"), `[`, 1), "_"), `[`, 1)
+temp <- sapply(strsplit(sapply(strsplit(colnames(contents), "-"), `[`, 1), "_"), `[`, 2)#sapply( strsplit(sapply(strsplit(colnames(contents), "."), `[`, 1), "_R"), `[`, 2)
+dc3000$day <-sapply( strsplit(sapply(strsplit(temp, "\\."), `[`, 1), "R"), `[`, 2)
+dc3000$day <- sapply(dc3000$day, replace_rr)
+dc3000$replicate <- as.numeric(as.character(sapply(strsplit(colnames(contents), "-"), `[`, 2)))
+dc3000 <-dc3000[dc3000$treatment!="control",]
+infect_plot_dc3000=dc3000%>% group_by(day, treatment) %>% summarise(mean = mean((perc_bacteria), na.rm=T), se = sd((perc_bacteria), na.rm=T) / length(perc_bacteria)) 
+dc3000_ev <- infect_plot_dc3000[infect_plot_dc3000$treatment=="EV",]
+dc3000_avr <- infect_plot_dc3000[infect_plot_dc3000$treatment=="avrB",]
+
+
+```
+
+now HPA
+```{r}
+
+
+total_count_hpa=read.table("/Users/tkarasov/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections/hpa_total_read_count.txt", sep=',', row.names=1, header=T)
+contents_hpa=read.table("/Users/tkarasov/work_main/abt6_projects9/metagenomic_controlled/data/metagenome_tables/hpa_all_compared.txt", row.names=1, header=T, sep="\t", check.names=FALSE)
+content_empty=contents_hpa[-c(1),]
+content_graph=sweep(content_empty, 2, colSums(content_empty),'/')
+contents_hpa['total',]=rowSums(total_count_hpa[colnames(contents_hpa),c(1,2)])
+temp=contents_hpa['Oomycetes',]/contents_hpa['total',]
+contents_hpa['perc_oomycete',]=temp
+hpa <- data.frame(perc_oom=as.numeric(contents_hpa['perc_oomycete',]), samp=colnames(contents_hpa))
+hpa$treatment <- unlist(strsplit(colnames(contents_hpa), "-"))[c(FALSE, TRUE, FALSE)]
+hpa$day <- as.numeric(as.character(substr(unlist(strsplit(colnames(contents_hpa), "-"))[c(TRUE, FALSE, FALSE)], 2, 4)))
+infect_plot_hpa=hpa%>% group_by(day, treatment) %>% summarise(mean = mean((perc_oom), na.rm=T), se = sd((perc_oom), na.rm=T) / length(perc_oom)) 
+hpa_ev <- infect_plot_hpa[infect_plot_hpa$treatment=="I",]
+```
+
+Now combine graphs
+
+```{R}
+combined = data.frame(rbind(t(swedish), t(german[rownames(swedish),])))
+combined[,c(1:572,574)] = sapply(combined[, c(1:572,574)], as.character)
+combined[,c(1:572,574)] = sapply(combined[, c(1:572,574)], as.numeric)
+combined$Oomycete_load=as.numeric(as.character(combined$Oomycete_load))
+p <- ggplot(data=(combined), aes(x=Bacterial_load)) + geom_histogram(color="black", fill="lightblue") + 
+  theme_bw() + xlab("Proportion Reads Bacterial")
+pdf("~/Dropbox/controlled_metagenomics/results_figures/EV_load_histogram.pdf")
+p+   
+  geom_vline(aes(xintercept=as.numeric(dc3000_ev[dc3000_ev$day==0,'mean'])), colour="RED") +
+  geom_vline(aes(xintercept=as.numeric(dc3000_ev[dc3000_ev$day==1,'mean'])), colour="RED") +
+  geom_vline(aes(xintercept=as.numeric(dc3000_ev[dc3000_ev$day==2,'mean'])), colour="RED") +
+  geom_vline(aes(xintercept=as.numeric(dc3000_ev[dc3000_ev$day==3,'mean'])), colour="RED") +
+  geom_vline(aes(xintercept=as.numeric(dc3000_ev[dc3000_ev$day==4,'mean'])), colour="RED") +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10))
+dev.off()
+
+
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/avrB_load_histogram.pdf")
+p +
+  geom_vline(aes(xintercept=as.numeric(dc3000_avr[dc3000_avr$day==0,'mean'])), colour="RED") +
+  geom_vline(aes(xintercept=as.numeric(dc3000_avr[dc3000_avr$day==1,'mean'])), colour="RED") +
+  geom_vline(aes(xintercept=as.numeric(dc3000_avr[dc3000_avr$day==2,'mean'])), colour="RED") +
+  geom_vline(aes(xintercept=as.numeric(dc3000_avr[dc3000_avr$day==3,'mean'])), colour="RED") +
+  geom_vline(aes(xintercept=as.numeric(dc3000_avr[dc3000_avr$day==4,'mean'])), colour="RED") +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10))
+dev.off()
+
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/hpa_load_histogram.pdf")
+hp<-ggplot(data=(combined), aes(x=Oomycete_load)) + geom_histogram(color="black", fill="lightblue") + 
+  theme_bw() + xlab("Proportion Reads Oomycete")
+hp+   
+  geom_vline(aes(xintercept=as.numeric(hpa_ev[hpa_ev$day==0,'mean'])), colour="RED") +
+  geom_vline(aes(xintercept=as.numeric(hpa_ev[hpa_ev$day==2,'mean'])), colour="RED") +
+  geom_vline(aes(xintercept=as.numeric(hpa_ev[hpa_ev$day==5,'mean'])), colour="RED") +
+  geom_vline(aes(xintercept=as.numeric(hpa_ev[hpa_ev$day==11,'mean'])), colour="RED") +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10))
+dev.off()
+
+hpa_5=as.numeric(hpa_ev[hpa_ev$day==5,'mean'])
+avr_6 = as.numeric(dc3000_avr[dc3000_avr$day==4,'mean'])
+gt_5_hpa = dim(combined[combined$Oomycete_load>=hpa_5,])[1]/dim(combined)[1]
+gt_avr = dim(combined[combined$Bacterial_load>=avr_6,])[1]/dim(combined)[1]
+```
+
+
+Now on to correlations
+```{R}
+german= read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/metagenome_tables/german_genus_compared.txt", header = T, row.names = 1)
+german_whole= read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/metagenome_tables/german_compared.txt", header = T, row.names = 1)
+german_ratio = read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/german_samples/total_read_count.txt", sep=',', row.names = 1)
+rownames(german_ratio) = sub( "-", ".", rownames(german_ratio))
+colnames(german_ratio) = c("mapped", "unmapped")
+german_ratio = t(german_ratio)
+german = rbind(german, german_ratio[,colnames(german)])
+german['Bacterial_load',] = as.numeric(as.character(german_whole['Bacteria',]/(german['mapped',]+german['unmapped',])))
+german['Eukaryote_load',] = as.numeric(as.character(german_whole['Eukaryota',]/(german['mapped',]+german['unmapped',])))
+german['Oomycete_load',] =  as.numeric(as.character(german_whole['Oomycetes',]/(german['mapped',]+german['unmapped',])))
+german['Pseudomonas_load',] = as.numeric(as.character(german_whole['Pseudomonas',]/(german['mapped',]+german['unmapped',])))
+german['population',] = 'german'
+
+
+swedish = read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/metagenome_tables/swedish_genus_compared.txt", header = T, row.names = 1)
+swedish_whole = read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/metagenome_tables/swedish_compared.txt", header = T, row.names = 1)
+swedish_ratio = read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/swedish_samples/total_read_count.txt", sep=',', row.names = 1)
+rownames(swedish_ratio) = sub( "-", ".", rownames(swedish_ratio))
+colnames(swedish_ratio) = c("mapped", "unmapped")
+swedish_ratio = t(swedish_ratio)
+swedish = rbind(swedish, swedish_ratio[,colnames(swedish)])
+swedish['Bacterial_load',] = as.numeric(as.character(swedish_whole['Bacteria',]/(swedish['mapped',]+swedish['unmapped',])))
+swedish['Eukaryote_load',] = as.numeric(as.character(swedish_whole['Eukaryota',]/(swedish['mapped',]+swedish['unmapped',])))
+swedish['Pseudomonas_load',] = as.numeric(as.character(swedish_whole['Pseudomonas',]/(swedish['mapped',]+swedish['unmapped',])))
+swedish['Oomycete_load',] = as.numeric(as.character(swedish_whole['Oomycetes',]/(swedish['mapped',]+swedish['unmapped',])))
+swedish['population',] = 'swedish'
+
+
+
+
+combined = data.frame(rbind(t(swedish), t(german[rownames(swedish),])))
+combined = within(combined, rm("Cyanobacteria"))
+keep = as.matrix(combined[,c(1:40)])
+for(i in 1:dim(combined)[1]){
+  temp=as.numeric(as.character(keep[i,]))/sum(as.numeric(as.character(keep[i,])), na.rm=T)
+  keep[i,]=temp
+}
+
+melted = melt(t(keep))
+melted$value = as.numeric(as.character(melted$value))
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/stacked_bar_metagenome.pdf", width=14, height=7)
+ggplot(melted, aes(x=Var2, y=value, fill=Var1))+geom_bar(stat='identity') +
+  xlab("") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+dev.off()
+

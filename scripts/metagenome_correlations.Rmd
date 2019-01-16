@@ -1,0 +1,48 @@
+---
+title: "Microbial_interactions"
+author: "Talia_Karasov"
+date: "3/12/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+library(compositions)
+genus_table <- read.table("~/Dropbox/controlled_metagenomics/metagenome_data/German_192/totalReads_bacteriaReads.txt", header=T, row.names=1)
+genus_table$percent_bac <- genus_table$Bacteria_reads/genus_table$Total_reads*100
+#predict_bac <- 10^log10(genus_table$percent_bac) * beta + inter
+
+g_t <- apply(t(genus_table), 2, as.numeric)
+rownames(g_t) = colnames(genus_table)
+#colnames(g_t) = t(genus_table)[1,]
+met_table <- read.table("~/Dropbox/controlled_metagenomics/metagenome_data/German_192/genus_counts.txt", header=T, row.names=1, sep='\t')
+gen_met <- rbind(met_table, g_t)
+gen_met['plant',] <- gen_met['Total_reads',]-gen_met['Bacteria_reads',]
+gen_met <- gen_met[order(rowSums(gen_met), decreasing=TRUE),]
+
+
+gen_met_rotate <- t(gen_met)[,c(2,4:8)]
+pdf("~/Dropbox/controlled_metagenomics/results_figures/clr_relations_192.pdf")
+pairs(clr(gen_met_rotate), pch='.')
+my_clr <- clr(gen_met_rotate)
+dev.off()
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
