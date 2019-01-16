@@ -123,17 +123,21 @@ plot_regress=function(name_family){
   my_subset=meb[meb$Family==name_family,]
   regress = lm(log10(value)~log10(per_val), data=my_subset)
   is_sig=summary(regress)$coefficients[,4][2]
+  fit = lm(log10(value)~log10(per_val), data=my_subset)
+  rsquared=round(signif(summary(fit)$adj.r.squared, 5), digits=3)
+  rsq_nam=paste(" R2",rsquared,sep="=")
+  name_family_amend = paste(name_family, rsq_nam, sep=",")
   sig=FALSE
   if(is_sig<0.005){
     p=ggplot(data=my_subset, aes(x=log10(per_val), y=log10(value))) +
     geom_point() + geom_smooth(method=lm, se=TRUE, col="BLACK") + theme_bw() +
-      annotate("text", label=paste(name_family, "*", sep=""), x=-3, y=-1, cex=4, color="RED") +
+      annotate("text", label=paste(name_family_amend, "*", sep=""), x=-3, y=-1, cex=2, color="RED") +
       xlim(-6,-.5) + ylim(-5,0) +xlab("") + ylab("")#+ xlab(expression(log[10]~("Hpa Load"))) + ylab(expression(log[10]~("Other Load")))
     return(p)}
   else{
     p=ggplot(data=my_subset, aes(x=log10(per_val), y=log10(value))) +
     geom_point() + geom_smooth(method=lm, se=TRUE, col="BLACK") + theme_bw() +
-      annotate("text", label=name_family, x=-3, y=-1, cex=4, color="RED") +
+      annotate("text", label=name_family_amend, x=-3, y=-1, cex=2, color="RED") +
       xlim(-6,-.5) + ylim(-5,0) +xlab("") +ylab("") # + xlab(expression(log[10]~("Hpa Load"))) + ylab(expression(log[10]~("Other Load"))) 
 return(p)
   }
@@ -149,7 +153,7 @@ for(fam in families){
   assign(paste("p_", i, sep=""), plot_regress(fam))
   i=i+1
   }
-grid.arrange(p_1,p_2,p_3,p_4,p_5,p_6,p_7,p_8,p_9,p_10)
+grid.arrange(p_1,p_2,p_3,p_4,p_5,p_6,p_7,p_8,p_9)
 dev.off()
 #PCA on leftover microbiome
 

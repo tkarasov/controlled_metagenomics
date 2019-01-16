@@ -26,7 +26,9 @@ g_legend<-function(a.gplot){
   legend <- tmp$grobs[[leg]]
   return(legend)}
 
-meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/dc3000_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+#meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/dc3000_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+meta=read.table("/ebio/abt6_projects9/metagenomic_controlled/data/processed_reads/dc3000_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+
 
 top10=names(sort(rowSums(meta, na.rm=TRUE), decreasing=TRUE )[1:10])
 meta_microbiome=meta[top10,]
@@ -116,6 +118,7 @@ Pseud$pseud=Pseud$value
 Pseud=subset(Pseud, select=-c(Family, value))
 meb=merge(microb_melt, Pseud)
 meb=meb[which(meb$Genotype!="control"),]
+meb=meb[which(meb$Genotype=="EV"),]
 #meb=meb[which(meb$Genotype!="C"),]
 lm_Pseud<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Pseudomonadaceae",])
 lm_Ent<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Enterobacteriaceae",])
@@ -128,6 +131,7 @@ lm_Morax<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Moraxell
 lm_Brady<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Bradyrhizobiaceae",])
 lm_Bruc<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Brucellaceae",])
 lm_Rest<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Rest",])
+
 
 df=data.frame()
 p=ggplot(df) +xlim(-2,3)+ylim(-2,0.0)
@@ -147,6 +151,52 @@ pdf("~/Dropbox/controlled_metagenomics/results_figures/effect_dc3000_other.pdf")
 p+panel_border(colour = "Black",size=1)
 
 dev.off()
+
+
+plot_regress=function(name_family){
+  nam = paste("p_",name_family, sep="")
+  #assign(nam, ggplot(data=meb[meb$Family==name_family,], aes(x=per_val, y=value)) +
+  #         geom_point() + geom_smooth(method=lm, se=TRUE, col="BLACK") + theme_bw())
+  my_subset=meb[meb$Family==name_family,]
+  regress = lm(log10(value+0.000001)~log10(pseud), data=my_subset)
+  is_sig=summary(regress)$coefficients[,4][2]
+  sig=FALSE
+  basic= ggplot(data=my_subset, aes(x=log10(pseud), y=log10(value))) +
+    geom_point(cex=0.2) + geom_smooth(method=lm, se=TRUE, col="BLACK") + theme_bw()
+  fit = lm(log10(value+0.000001)~log10(pseud), data=my_subset)
+  rsquared=round(signif(summary(fit)$adj.r.squared, 5), digits=3)
+  rsq_nam=paste(" R2",rsquared,sep="=")
+  name_family_amend = paste(name_family, rsq_nam, sep=",")#paste(name_family, rsquared, sep=rsq_nam)
+  
+  if(is_sig<0.005){
+    p= basic + annotate("text", label=paste(name_family_amend, "*", sep=""), x=0, y=1, cex=2, color="RED") +
+      xlim(-2.5,2) + ylim(-5,2) +xlab("") + ylab("")#+ xlab(expression(log[10]~("Hpa Load"))) + ylab(expression(log[10]~("Other Load")))
+    return(p)}
+  else{
+    p = basic + annotate("text", label=name_family_amend, x=0, y=1, cex=2, color="RED") +
+      xlim(-2.5,2) + ylim(-5,2) +xlab("") +ylab("") # + xlab(expression(log[10]~("Hpa Load"))) + ylab(expression(log[10]~("Other Load"))) 
+    return(p)
+  }
+}
+families=c("Pseudomonadaceae","Enterobacteriaceae","Sphingomonadaceae","Caulobacteraceae","Xanthomonadaceae","Rhizobiaceae","Moraxellaceae","Bradyrhizobiaceae","Alcaligenaceae", "Brucellaceae","Rest")
+pdf("/ebio/abt6_projects9/metagenomic_controlled/code/controlled_metagenomics_git/data/dc3000_other_taxa_correlations.pdf")
+
+
+i=1
+plots=rep(0, length(families))
+for(fam in families){
+  print(fam)
+  assign(paste("p_", i, sep=""), plot_regress(fam))
+  i=i+1
+}
+grid.arrange(p_2,p_3,p_4,p_5,p_6,p_7,p_8,p_9,p_10, p_11)
+dev.off()
+
+
+
+
+
+
 
 
 red=t((subset(meta_microbiome, select=-c(Family, control_1, control_2, control_2, control_3, control_4))))#[-c(1),])
