@@ -12,7 +12,9 @@ library(wesanderson)
 '%!in%' <- function(x,y)!('%in%'(x,y))
 mycolors=c("darkblue", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "lightskyblue", "firebrick", "khaki2", "brown1", "darkorange1", "cyan1", "royalblue4", "darksalmon", "darkblue","royalblue4", "dodgerblue3", "steelblue1", "lightskyblue", "darkseagreen", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "brown1", "darkorange1", "cyan1", "darkgrey")
 
-meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+
+#meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+meta=read.table("/ebio/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
 meta_hpa=melt(meta[c("Peronosporaceae"),], value.name="load", variable.name="Genotype")
 #meta_pseud$Genotype=rownames(meta_pseud)
 
@@ -81,17 +83,17 @@ per=subset(per,select=-c(Family, value))
 meb=merge(microb_melt, per)
 meb=meb[which(meb$Genotype!="control"),]
 #meb=meb[which(meb$Genotype!="C"),]
-lm_Pseud<-lm(log10(value+0.0001)~log10(per_val+0.0001), data=meb[meb$Family=="Pseudomonadaceae",])
-lm_Per<-lm(log10(value+0.0001)~log10(per_val+0.0001), data=meb[meb$Family=="Peronosporaceae",])
-lm_Ent<-lm(log10(value+0.0001)~log10(per_val+0.0001), data=meb[meb$Family=="Enterobacteriaceae",])
-lm_Sphing<-lm(log10(value+0.0001)~log10(per_val+0.0001), data=meb[meb$Family=="Sphingomonadaceae",])
-lm_Com<-lm(log10(value+0.0001)~log10(per_val+0.0001), data=meb[meb$Family=="Comamonadaceae",])
-lm_Xan<-lm(log10(value+0.0001)~log10(per_val+0.0001), data=meb[meb$Family=="Xanthomonadaceae",])
-lm_Rhiz<-lm(log10(value+0.0001)~log10(per_val+0.0001), data=meb[meb$Family=="Rhizobiaceae",])
-lm_Morax<-lm(log10(value+0.0001)~log10(per_val+0.0001), data=meb[meb$Family=="Moraxellaceae",])
-lm_Brady<-lm(log10(value+0.0001)~log10(per_val+0.0001), data=meb[meb$Family=="Bradyrhizobiaceae",])
-lm_Burk<-lm(log10(value+0.0001)~log10(per_val+0.0001), data=meb[meb$Family=="Burkholderiaceae",])
-lm_Rest<-lm(log10(value+0.0001)~log10(per_val+0.0001), data=meb[meb$Family=="Rest",])
+lm_Pseud<-lm(log10(value)~log10(per_val), data=meb[meb$Family=="Pseudomonadaceae",])
+lm_Per<-lm(log10(value)~log10(per_val), data=meb[meb$Family=="Peronosporaceae",])
+lm_Ent<-lm(log10(value)~log10(per_val), data=meb[meb$Family=="Enterobacteriaceae",])
+lm_Sphing<-lm(log10(value)~log10(per_val), data=meb[meb$Family=="Sphingomonadaceae",])
+lm_Com<-lm(log10(value)~log10(per_val), data=meb[meb$Family=="Comamonadaceae",])
+lm_Xan<-lm(log10(value)~log10(per_val), data=meb[meb$Family=="Xanthomonadaceae",])
+lm_Rhiz<-lm(log10(value)~log10(per_val), data=meb[meb$Family=="Rhizobiaceae",])
+lm_Morax<-lm(log10(value)~log10(per_val), data=meb[meb$Family=="Moraxellaceae",])
+lm_Brady<-lm(log10(value)~log10(per_val), data=meb[meb$Family=="Bradyrhizobiaceae",])
+lm_Burk<-lm(log10(value)~log10(per_val), data=meb[meb$Family=="Burkholderiaceae",])
+lm_Rest<-lm(log10(value)~log10(per_val), data=meb[meb$Family=="Rest",])
 
 
 df=data.frame()
@@ -113,8 +115,50 @@ p+panel_border(colour = "Black",size=1)
 
 dev.off()
 
+# Plot all regressions together
+plot_regress=function(name_family){
+  nam = paste("p_",name_family, sep="")
+  #assign(nam, ggplot(data=meb[meb$Family==name_family,], aes(x=per_val, y=value)) +
+  #         geom_point() + geom_smooth(method=lm, se=TRUE, col="BLACK") + theme_bw())
+  my_subset=meb[meb$Family==name_family,]
+  regress = lm(log10(value)~log10(per_val), data=my_subset)
+  is_sig=summary(regress)$coefficients[,4][2]
+  sig=FALSE
+  if(is_sig<0.005){
+    p=ggplot(data=my_subset, aes(x=log10(per_val), y=log10(value))) +
+    geom_point() + geom_smooth(method=lm, se=TRUE, col="BLACK") + theme_bw() +
+      annotate("text", label=paste(name_family, "*", sep=""), x=-3, y=-1, cex=4, color="RED") +
+      xlim(-6,-.5) + ylim(-5,0) +xlab("") + ylab("")#+ xlab(expression(log[10]~("Hpa Load"))) + ylab(expression(log[10]~("Other Load")))
+    return(p)}
+  else{
+    p=ggplot(data=my_subset, aes(x=log10(per_val), y=log10(value))) +
+    geom_point() + geom_smooth(method=lm, se=TRUE, col="BLACK") + theme_bw() +
+      annotate("text", label=name_family, x=-3, y=-1, cex=4, color="RED") +
+      xlim(-6,-.5) + ylim(-5,0) +xlab("") +ylab("") # + xlab(expression(log[10]~("Hpa Load"))) + ylab(expression(log[10]~("Other Load"))) 
+return(p)
+  }
+}
 
+pdf("/ebio/abt6_projects9/metagenomic_controlled/code/controlled_metagenomics_git/data/hpa_other_taxa_correlations.pdf")
+  
+families=c("Pseudomonadaceae","Enterobacteriaceae","Sphingomonadaceae","Comamonadaceae","Xanthomonadaceae","Rhizobiaceae","Moraxellaceae","Bradyrhizobiaceae","Burkholderiaceae","Rest")
+i=1
+plots=rep(0, length(families))
+for(fam in families){
+  print(fam)
+  assign(paste("p_", i, sep=""), plot_regress(fam))
+  i=i+1
+  }
+grid.arrange(p_1,p_2,p_3,p_4,p_5,p_6,p_7,p_8,p_9,p_10)
+dev.off()
 #PCA on leftover microbiome
+
+
+
+
+
+
+
 
 # red is 
 red=t((subset(meta_microbiome, select=-c(Family))))#[-c(1),])
