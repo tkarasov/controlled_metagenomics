@@ -6,6 +6,7 @@ library(RColorBrewer)
 library(wesanderson)
 require(gridExtra)
 library(cowplot)
+library(lmtest)
 '%!in%' <- function(x,y)!('%in%'(x,y))
 mycolors=c("darkblue", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "lightskyblue", "firebrick", "khaki2", "brown1", "darkorange1", "cyan1", "royalblue4", "darksalmon", "darkblue","royalblue4", "dodgerblue3", "steelblue1", "lightskyblue", "darkseagreen", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "brown1", "darkorange1", "cyan1", "darkgrey")
 
@@ -106,6 +107,7 @@ theme(legend.position="bottom", panel.background = element_blank(), axis.line = 
 dev.off()
 }
 
+
 #now regression modeling
 #beyond day 2 the infection seems to plateau
 microb_melt$infect_date=microb_melt$Day>2
@@ -132,7 +134,11 @@ lm_Brady<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Bradyrhizobiaceae"
 lm_Bruc<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Brucellaceae",])
 lm_Rest<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Rest",])
 
+#now fit second regression model with squared residuals of first. This is how one would test for heteroskedasticity but I dont see it. Hm
+conditonal_variance<-lmtest::bptest(lm_Ent)
 
+
+###
 df=data.frame()
 p=ggplot(df) +xlim(-2,3)+ylim(-2,0.0)
 
@@ -180,8 +186,6 @@ plot_regress=function(name_family){
 }
 families=c("Pseudomonadaceae","Enterobacteriaceae","Sphingomonadaceae","Caulobacteraceae","Xanthomonadaceae","Rhizobiaceae","Moraxellaceae","Bradyrhizobiaceae","Alcaligenaceae", "Brucellaceae","Rest")
 pdf("/ebio/abt6_projects9/metagenomic_controlled/code/controlled_metagenomics_git/data/dc3000_other_taxa_correlations.pdf")
-
-
 i=1
 plots=rep(0, length(families))
 for(fam in families){
@@ -192,7 +196,30 @@ for(fam in families){
 grid.arrange(p_2,p_3,p_4,p_5,p_6,p_7,p_8,p_9,p_10, bottom=textGrob(expression(log[10]~"(Pseud. Cov./Plant Cov.)")), left=textGrob(expression(log[10]~"(Focal Cov./Plant Cov.)"), rot=90))
 dev.off()
 
+#Rank correlations vs. other for 
+pdf("/ebio/abt6_projects9/metagenomic_controlled/code/controlled_metagenomics_git/data/hist_dc3000_hpa.pdf)
+EV_only = grep("EV_", colnames(meta))
+meta_EV=t(meta[,EV_only])
+hpa=read.table("/ebio/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections//meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+hpa_I_only=grep(".I.", colnames(hpa))
+hpa_EV=t(hpa[,hpa_I_only])
+corr_pseud=cor(meta_EV, method='spearman')
+corr_hpa=cor(hpa_EV, method='spearman')
+per_fin=t(melt(corr_hpa[,"Peronosporaceae"], value.name="per"))
+pseud=data.frame(t(melt(corr_pseud[,"Pseudomonadaceae"],value.name="pseud")))
+per_pseud=data.frame(t(rbind(per_fin[, intersect(colnames(per_fin), colnames(pseud))], pseud[,intersect(colnames(per_fin), colnames(pseud))])))
+colnames(per_pseud)=c("Peronosporaceae","Pseudomonadaceae")
+per_pseud=per_pseud[which(per_pseud$Peronosporaceae!="NA"),]
+per_pseud=per_pseud[which(per_pseud$Pseudomonadaceae!="NA"),]
+per_pseud=per_pseud[-c(which(rownames(per_pseud)=="Peronosporaceae")),]
+per_pseud=per_pseud[-c(which(rownames(per_pseud)=="Pseudomonadaceae")),]
+m_ps=melt(per_pseud)
 
+
+plot_hist = ggplot(data=m_ps, aes(x=value, fill=variable, stat(density)))
+
+plot_hist+geom_histogram(alpha=1)+scale_fill_brewer(palette="Set1") + xlab("Spearman rank correlation, R") + xlim(-1,1)
+dev.off()
 
 
 
