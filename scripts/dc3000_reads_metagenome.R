@@ -120,17 +120,17 @@ meb=merge(microb_melt, Pseud)
 meb=meb[which(meb$Genotype!="control"),]
 meb=meb[which(meb$Genotype=="EV"),]
 #meb=meb[which(meb$Genotype!="C"),]
-lm_Pseud<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Pseudomonadaceae",])
-lm_Ent<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Enterobacteriaceae",])
-lm_Caul<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Caulobacteraceae",])
-lm_Sphing<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Sphingomonadaceae",])
-lm_Alcal<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Alcaligenaceae",])
-lm_Xan<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Xanthomonadaceae",])
-lm_Rhiz<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Rhizobiaceae",])
-lm_Morax<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Moraxellaceae",])
-lm_Brady<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Bradyrhizobiaceae",])
-lm_Bruc<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Brucellaceae",])
-lm_Rest<-lm(log10(value+0.01)~log10(pseud+0.01), data=meb[meb$Family=="Rest",])
+lm_Pseud<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Pseudomonadaceae",])
+lm_Ent<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Enterobacteriaceae",])
+lm_Caul<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Caulobacteraceae",])
+lm_Sphing<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Sphingomonadaceae",])
+lm_Alcal<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Alcaligenaceae",])
+lm_Xan<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Xanthomonadaceae",])
+lm_Rhiz<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Rhizobiaceae",])
+lm_Morax<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Moraxellaceae",])
+lm_Brady<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Bradyrhizobiaceae",])
+lm_Bruc<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Brucellaceae",])
+lm_Rest<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Rest",])
 
 
 df=data.frame()
@@ -189,7 +189,7 @@ for(fam in families){
   assign(paste("p_", i, sep=""), plot_regress(fam))
   i=i+1
 }
-grid.arrange(p_2,p_3,p_4,p_5,p_6,p_7,p_8,p_9,p_10, p_11)
+grid.arrange(p_2,p_3,p_4,p_5,p_6,p_7,p_8,p_9,p_10, bottom=textGrob(expression(log[10]~"(Pseud. Cov./Plant Cov.)")), left=textGrob(expression(log[10]~"(Focal Cov./Plant Cov.)"), rot=90))
 dev.off()
 
 
