@@ -7,6 +7,8 @@ library(wesanderson)
 require(gridExtra)
 library(cowplot)
 library(lmtest)
+library(Hmisc)
+library(igraph)
 '%!in%' <- function(x,y)!('%in%'(x,y))
 mycolors=c("darkblue", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "lightskyblue", "firebrick", "khaki2", "brown1", "darkorange1", "cyan1", "royalblue4", "darksalmon", "darkblue","royalblue4", "dodgerblue3", "steelblue1", "lightskyblue", "darkseagreen", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "brown1", "darkorange1", "cyan1", "darkgrey")
 
@@ -197,7 +199,7 @@ grid.arrange(p_2,p_3,p_4,p_5,p_6,p_7,p_8,p_9,p_10, bottom=textGrob(expression(lo
 dev.off()
 
 #Rank correlations vs. other for 
-pdf("/ebio/abt6_projects9/metagenomic_controlled/code/controlled_metagenomics_git/data/hist_dc3000_hpa.pdf)
+pdf("/ebio/abt6_projects9/metagenomic_controlled/code/controlled_metagenomics_git/data/hist_dc3000_hpa.pdf")
 EV_only = grep("EV_", colnames(meta))
 meta_EV=t(meta[,EV_only])
 hpa=read.table("/ebio/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections//meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
@@ -214,7 +216,7 @@ per_pseud=per_pseud[which(per_pseud$Pseudomonadaceae!="NA"),]
 per_pseud=per_pseud[-c(which(rownames(per_pseud)=="Peronosporaceae")),]
 per_pseud=per_pseud[-c(which(rownames(per_pseud)=="Pseudomonadaceae")),]
 m_ps=melt(per_pseud)
-
+wilcox.test(per_pseud$Peronosporaceae, per_pseud$Pseudomonadaceae)
 
 plot_hist = ggplot(data=m_ps, aes(x=value, fill=variable, stat(density)))
 
@@ -222,15 +224,33 @@ plot_hist+geom_histogram(alpha=1)+scale_fill_brewer(palette="Set1") + xlab("Spea
 dev.off()
 
 
+#network
+#too many lineages in hpa_EV
+hpa_rec=hpa_EV[,which(colSums(hpa_EV)>0.001)]
+#hpa_rec=hpa_EV[,which(apply(hpa_EV, 2, FUN=max)>0.001)]
+hpa_r=rcorr(hpa_rec,type="spearman")
+hpa_sig=hpa_r$r
+hpa_sig[which(hpa_r$P>=0.01/dim(hpa_sig)[1])]=0
+diag(hpa_sig)=0
+hpa_sig[is.na(hpa_sig)]=0
+#hpa_sig[hpa_sig==1]=NA
+g1<-graph.adjacency(hpa_sig, weighted=TRUE, mode="lower")
+V(g1)$color="gold"
+V(g1)["Peronosporaceae"]$color="tomato"
+V(g1)$size=node.size*100000
+node.size=colSums(hpa_rec)/dim(hpa_rec)[1]*100
+l <- layout_with_kk(g1)
+plot.igraph(g1, vertex.label=NA,vertex.size=5, vertex.frame.color="transparent", layout=l, vertex.size=as.matrix(node.size),
+            edge.width=abs(E(g1)$weight)*1, edge.color=ifelse(hpa_r$r > 0, "blue","red"))
 
 
-
-
-red=t((subset(meta_microbiome, select=-c(Family, control_1, control_2, control_2, control_3, control_4))))#[-c(1),])
-#get mean
-red_mean=mean(red)
-
-
-prin_comp=prcomp(red, scale.=T, center=T)
-biplot(prin_comp)
-ggbiplot(prin_comp)
+# plot
+par(bg="grey13", mar=c(0,0,0,0))
+set.seed(4)
+plot(network, 
+     vertex.size=12,
+     vertex.color=my_color, 
+     vertex.label.cex=0.7,
+     vertex.label.color="white",
+     vertex.frame.color="transparent"
+)
