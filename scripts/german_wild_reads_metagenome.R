@@ -4,31 +4,39 @@ library('tidyr')
 library(ggplot2)
 library(RColorBrewer)
 library(wesanderson)
-library(matixStats)
+library(matrixStats)
 require(gridExtra)
 library(moments)
+library(intrval)
 
 meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/german_samples/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
 
 top10=names(sort(rowSums(meta, na.rm=TRUE), decreasing=TRUE )[1:10])
-meta_microbiome=meta[top10,]
-rest=colSums(meta[rownames(meta) %!in% top10, ], na.rm=TRUE)
+meta_microbiome=meta[top10_swed,]
+rownames(meta_microbiome)=c(top10_swed)
+rest=colSums(meta[rownames(meta) %ni% top10_swed, ], na.rm=TRUE)
 meta_microbiome=rbind(meta_microbiome, rest)
 rownames(meta_microbiome)[11]="Rest"
-tot=colSums(meta_microbiome)
+tot=colSums(meta_microbiome, na.rm=TRUE)
 meta_microbiome$Family=rownames(meta_microbiome)
 microb_melt=melt(meta_microbiome, id=c("Family"))
+microb_melt[is.na(microb_melt$value),]$value=0
 microb_melt$Load=as.factor(-1*tot[microb_melt$variable])
 
 #microb_melt$Day2=relevel(microb_melt$Day, "0")
 #microb_melt$Genotype2=relevel(as.factor(microb_melt$Genotype), "C")
+manual_colors=c("darkblue", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "lightskyblue", "darkgreen", "deeppink", "khaki2", "firebrick", "brown1", "darkorange1", "cyan1", "royalblue4", "darksalmon", "darkblue",
+                "royalblue4", "dodgerblue3", "steelblue1", "lightskyblue", "darkseagreen", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "brown1", "darkorange1", "cyan1", "darkgrey")
+
 pdf("~/Dropbox/controlled_metagenomics/results_figures/german_metagenome.pdf")
 p <- ggplot(data=microb_melt, aes(x=Load, y=value, fill=Family))
 p + geom_bar(aes(), stat="identity", position="stack") +
-  scale_fill_manual(values = c("darkblue", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "lightskyblue", "darkgreen", "deeppink", "khaki2", "firebrick", "brown1", "darkorange1", "cyan1", "royalblue4", "darksalmon", "darkblue",
-                               "royalblue4", "dodgerblue3", "steelblue1", "lightskyblue", "darkseagreen", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "brown1", "darkorange1", "cyan1", "darkgrey")) +
-  theme(legend.position="bottom", panel.background = element_blank(), axis.line = element_line(colour = "black"), axis.text.x = element_blank()) + guides(fill=guide_legend(nrow=5)) +
-  xlab("Plant Individuals") + ylab("Microbial Cov./Plant Cov.")
+  scale_fill_manual(values = manual_colors) +
+  theme(legend.position="bottom", panel.background = element_blank(), axis.line = element_line(colour = "black"), axis.text.x = element_blank()) + 
+  guides(fill=guide_legend(nrow=5)) +
+  xlab("Plant Individuals") + ylab("Microbial Cov./Plant Cov.") +
+  theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank()) + 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 225)) 
 
 dev.off()
 

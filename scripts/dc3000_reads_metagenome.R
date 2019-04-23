@@ -9,7 +9,9 @@ library(cowplot)
 library(lmtest)
 library(Hmisc)
 library(igraph)
+library(extrafont)
 '%!in%' <- function(x,y)!('%in%'(x,y))
+font_import()
 mycolors=c("darkblue", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "lightskyblue", "firebrick", "khaki2", "brown1", "darkorange1", "cyan1", "royalblue4", "darksalmon", "darkblue","royalblue4", "dodgerblue3", "steelblue1", "lightskyblue", "darkseagreen", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "brown1", "darkorange1", "cyan1", "darkgrey")
 
 replace_rr <- function(rr){
@@ -93,13 +95,13 @@ EV_final= EV_plot + geom_bar(aes(), stat="identity", position="stack") +
 
 leg<-g_legend(with_legend)
 
-pdf("~/Dropbox/controlled_metagenomics/results_figures/dc3000_temporal_metagenome_Triplot.pdf", width=8, height=12)
+pdf("~/Dropbox/controlled_metagenomics/results_figures/dc3000_temporal_metagenome_Triplot.pdf", width=8, height=12, fonts = "Arial")
 plot_grid(control_final, avrB_final, EV_final, leg, rel_heights=c(1/3.5,1/3.5,1/3.5, .5/3.5),  nrow=4)
 dev.off()
 
 
 if(FALSE) {
-pdf("~/Dropbox/controlled_metagenomics/results_figures/dc3000_metagenome.pdf")
+pdf("~/Dropbox/controlled_metagenomics/results_figures/dc3000_metagenome.pdf", fonts = "Arial")
 p <- ggplot(data=microb_melt, aes(x=combined, y=value, fill=Family))
 p + geom_bar(aes(), stat="identity", position="stack") +
   scale_fill_manual(values = mycolors) +
@@ -155,7 +157,7 @@ for(i in 1:11){
     print(i)
   }
   }
-pdf("~/Dropbox/controlled_metagenomics/results_figures/effect_dc3000_other.pdf")
+pdf("~/Dropbox/controlled_metagenomics/results_figures/effect_dc3000_other.pdf",fonts = "Arial")
 p+panel_border(colour = "Black",size=1)
 
 dev.off()
@@ -187,7 +189,7 @@ plot_regress=function(name_family){
   }
 }
 families=c("Pseudomonadaceae","Enterobacteriaceae","Sphingomonadaceae","Caulobacteraceae","Xanthomonadaceae","Rhizobiaceae","Moraxellaceae","Bradyrhizobiaceae","Alcaligenaceae", "Brucellaceae","Rest")
-pdf("/ebio/abt6_projects9/metagenomic_controlled/code/controlled_metagenomics_git/data/dc3000_other_taxa_correlations.pdf")
+pdf("/ebio/abt6_projects9/metagenomic_controlled/code/controlled_metagenomics_git/data/dc3000_other_taxa_correlations.pdf", fonts = "Arial")
 i=1
 plots=rep(0, length(families))
 for(fam in families){
@@ -199,10 +201,11 @@ grid.arrange(p_2,p_3,p_4,p_5,p_6,p_7,p_8,p_9,p_10, bottom=textGrob(expression(lo
 dev.off()
 
 #Rank correlations vs. other for 
-pdf("/ebio/abt6_projects9/metagenomic_controlled/code/controlled_metagenomics_git/data/hist_dc3000_hpa.pdf")
+pdf("/ebio/abt6_projects9/metagenomic_controlled/code/controlled_metagenomics_git/data/hist_dc3000_hpa.pdf", fonts = "Arial")
 EV_only = grep("EV_", colnames(meta))
 meta_EV=t(meta[,EV_only])
 hpa=read.table("/ebio/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections//meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+#hpa=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections//meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
 hpa_I_only=grep(".I.", colnames(hpa))
 hpa_EV=t(hpa[,hpa_I_only])
 corr_pseud=cor(meta_EV, method='spearman')
