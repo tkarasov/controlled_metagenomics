@@ -1,5 +1,5 @@
 # Controlled Metagenomics
-## Max Planck Institute for Developmental Biology
+### Max Planck Institute for Developmental Biology
 ##### Talia Karasov
 This repository contains scripts related to the controlled metagenomic infections performed in 2018 and 2019
 
