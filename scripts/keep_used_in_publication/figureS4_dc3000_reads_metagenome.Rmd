@@ -1,3 +1,19 @@
+---
+title: "Figure S4 DC3000 effect on other microbes"
+author: "Talia_Karasov"
+date: "5/21/2019"
+output: html_document
+---
+  
+  #The relationship between load and diversity and some statistics about differences between populations
+  The goal of this script is to look at the relationship between load and diversity
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+```{r, echo = FALSE}
 library(reshape2)
 library('dplyr')
 library('tidyr')
@@ -12,7 +28,11 @@ library(igraph)
 library(extrafont)
 '%!in%' <- function(x,y)!('%in%'(x,y))
 font_import()
-mycolors=c("darkblue", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "lightskyblue", "firebrick", "khaki2", "brown1", "darkorange1", "cyan1", "royalblue4", "darksalmon", "darkblue","royalblue4", "dodgerblue3", "steelblue1", "lightskyblue", "darkseagreen", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "brown1", "darkorange1", "cyan1", "darkgrey")
+n = 20
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+mycolors = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+
+#c("darkblue", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "lightskyblue", "firebrick", "khaki2", "brown1", "darkorange1", "cyan1", "royalblue4", "darksalmon", "darkblue","royalblue4", "dodgerblue3", "steelblue1", "lightskyblue", "darkseagreen", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "brown1", "darkorange1", "cyan1", "darkgrey")
 
 replace_rr <- function(rr){
   if(is.na(rr)) return(NA)
@@ -31,10 +51,13 @@ g_legend<-function(a.gplot){
   legend <- tmp$grobs[[leg]]
   return(legend)}
 
-#meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/dc3000_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
-meta=read.table("/ebio/abt6_projects9/metagenomic_controlled/data/processed_reads/dc3000_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+```
 
 
+
+```{r}
+meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/dc3000_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+#meta=read.table("/ebio/abt6_projects9/metagenomic_controlled/data/processed_reads/dc3000_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
 top10=names(sort(rowSums(meta, na.rm=TRUE), decreasing=TRUE )[1:10])
 meta_microbiome=meta[top10,]
 rest=colSums(meta[rownames(meta) %!in% top10, ], na.rm=TRUE)
@@ -67,35 +90,34 @@ avrB_plot <- ggplot(data=avrB, aes(x=combined, y=log10(value+1), fill=Family))
 control=microb_melt[microb_melt$Genotype=="C",]
 control=control[which(is.na(control$Replicate)==FALSE),]
 control_plot <- ggplot(data=control, aes(x=combined, y=log10(value+1), fill=Family))
+```
 
-
-
-
-###
-avrB_final= avrB_plot + geom_bar(aes(), stat="identity", position="stack") +
+###Now graphing
+```{r}
+avrB_final = avrB_plot + geom_bar(aes(), stat="identity", position="stack") +
   scale_fill_manual(values = mycolors) +
   theme(legend.position="none", panel.background = element_blank(), axis.line = element_line(colour = "black")) + guides(fill=guide_legend(nrow=5)) +
   xlab("") +  ylab(expression(log[10]~("Microbe cov."/"Plant cov.")))+ ylim(c(0,3))
 
-control_final= control_plot + geom_bar(aes(), stat="identity", position="stack") +
+control_final = control_plot + geom_bar(aes(), stat="identity", position="stack") +
   scale_fill_manual(values = mycolors) +
   theme(legend.position="none", panel.background = element_blank(), axis.line = element_line(colour = "black")) + guides(fill=guide_legend(nrow=5)) +
   xlab("") +  ylim(c(0,3)) + ylab("")
 
-with_legend<- control_plot + geom_bar(aes(), stat="identity", position="stack") +
+with_legend = control_plot + geom_bar(aes(), stat="identity", position="stack") +
   scale_fill_manual(values = mycolors) +
   theme(legend.position="bottom", panel.background = element_blank(), axis.line = element_line(colour = "black")) + guides(fill=guide_legend(nrow=5)) +
   xlab("Plant Individuals") +  ylab(expression(log[10]~("Microbe cov."/"Plant cov."))) + ylim(c(0,3))
 
-EV_final= EV_plot + geom_bar(aes(), stat="identity", position="stack") +
+EV_final = EV_plot + geom_bar(aes(), stat="identity", position="stack") +
   scale_fill_manual(values = mycolors) +
   theme(legend.position="none", panel.background = element_blank(), axis.line = element_line(colour = "black")) + guides(fill=guide_legend(nrow=5)) +
   xlab("Day") + ylab("")+ ylim(c(0,3))
 
 
-leg<-g_legend(with_legend)
+leg = g_legend(with_legend)
 
-pdf("~/Dropbox/controlled_metagenomics/results_figures/dc3000_temporal_metagenome_Triplot.pdf", width=8, height=12, fonts = "Arial")
+pdf("~/Dropbox/controlled_metagenomics/results_figures/dc3000_temporal_metagenome_Triplot.pdf", width=6, height=12, family = "ArialMT", useDingbats = FALSE)
 plot_grid(control_final, avrB_final, EV_final, leg, rel_heights=c(1/3.5,1/3.5,1/3.5, .5/3.5),  nrow=4)
 dev.off()
 
@@ -110,10 +132,10 @@ theme(legend.position="bottom", panel.background = element_blank(), axis.line = 
 
 dev.off()
 }
+```
 
-
-#now regression modeling
-#beyond day 2 the infection seems to plateau
+####Now regression modeling
+#```{r}
 microb_melt$infect_date=microb_melt$Day>2
 microb_melt$Genotype=as.factor(microb_melt$Genotype)
 microb_melt$Genotype<-relevel(microb_melt$Genotype, ref=2)
@@ -137,8 +159,10 @@ lm_Morax<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Moraxellaceae",])
 lm_Brady<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Bradyrhizobiaceae",])
 lm_Bruc<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Brucellaceae",])
 lm_Rest<-lm(log10(value)~log10(pseud), data=meb[meb$Family=="Rest",])
+```
 
-#now fit second regression model with squared residuals of first. This is how one would test for heteroskedasticity but I dont see it. Hm
+####Now fit second regression model with squared residuals of first. This is how one would test for heteroskedasticity but I dont see it. Hm
+
 conditonal_variance<-lmtest::bptest(lm_Ent)
 
 

@@ -1,0 +1,140 @@
+---
+title: "Figure S3 relationship between load and plant growth"
+author: "Talia_Karasov"
+date: "6/5/2019"
+output: html_document
+---
+  
+  #The relationship between load and diversity and some statistics about differences between populations
+  The goal of this script is to look at the relationship between load and diversity
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+```{r, echo = FALSE}
+library(reshape2)
+library('dplyr')
+library('tidyr')
+library(ggplot2)
+library(RColorBrewer)
+library(wesanderson)
+require(gridExtra)
+library(cowplot)
+library(lmtest)
+library(Hmisc)
+library(igraph)
+library(extrafont)
+'%!in%' <- function(x,y)!('%in%'(x,y))
+font_import()
+n = 20
+lm_eqn = function(df){
+    m = lm(y ~ x, df);
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+         list(a = format(coef(m)[1], digits = 2), 
+              b = format(coef(m)[2], digits = 2), 
+             r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));                 
+}
+
+
+```
+
+### Green Pixels
+```{r}
+# Load libraries
+library(tidyverse)
+
+# Import data
+luminescence = read.csv("~/Dropbox/controlled_metagenomics/alejandra_pixels_lux/2019-01-16_Lux_Ey_Col.csv", sep=";")
+
+```
+
+
+Before starting the analysis, it is necessary to subtract the blank from the luminescence 'raw' values. For this, the mean of the blanks is calculated for each measurement (F, S, T), and then it is subtracted from the corresponding  column. This has to be done by plate. 
+
+Then, the mean of the three replicates is calculated, and then a log10-transformation is applied. With this values, the following analyses are done.
+
+
+```{r}
+# Calculate the mean of the blanks in each measurement
+blanks.mean = 
+  as.data.frame(
+  luminescence %>%
+  filter(Strain == "Blank") %>%
+  summarise(mean.F = mean(F), mean.S = mean(S), mean.T = mean(T))) 
+
+print(blanks.mean)
+
+# Subtract from raw plant measurement
+luminescence.use =
+  luminescence %>% 
+  filter(Plate == "B", Strain != "Blank") %>%
+  mutate(F = F - (blanks.mean[1,1]), S = S - (blanks.mean[1,2]),
+         T = T - (blanks.mean[1,3]))
+
+# Transform data with log10
+log.luminescence = luminescence.use
+log.luminescence[ , 5:7] = luminescence.use[ , 5:7] %>% log10  
+
+# Replace NaN and infinite number (log10(0)) for 0
+log.luminescence[is.na(log.luminescence)] = 0
+is.na(log.luminescence)<-sapply(log.luminescence, is.infinite)
+log.luminescence[is.na(log.luminescence)] = 0
+
+# Create a new column with the mean
+log.luminescence$mean_log_luminescence = rowMeans(log.luminescence[ ,5:7])
+
+head(log.luminescence)
+```
+
+
+
+```{r}
+green.pixels = read.table("~/Dropbox/controlled_metagenomics/alejandra_pixels_lux/Green_pixels_Ey_Col.csv", sep=";", header=T)
+
+pixels.luminescence = merge(log.luminescence[ ,c(2:4,8)], green.pixels[ ,c(3:7)]) 
+write.csv(pixels.luminescence, "~/Dropbox/controlled_metagenomics/alejandra_pixels_lux/pixels_lux_combined.csv")
+```
+
+
+```{r}
+pixels.luminescence.nocontrol = pixels.luminescence %>% filter(Strain != "Control")
+
+plot.genotypes = ggplot(pixels.luminescence.nocontrol, aes(mean_log_luminescence, (Pixels_post))) +
+  geom_point() +
+  geom_smooth(method="lm", se=FALSE, color="black") +
+  facet_grid(vars(Accession), vars(Strain)) +
+  panel_border() +
+  xlab(expression("Bacterial Growth (log"[10]*"(mean luminescence))")) +
+  ylab("Plant Growth (Green Pixels)")
+
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/alejandra_pixels_luminescence.pdf", width=7.2, height=3.6, family = "ArialMT", useDingbats = FALSE)
+plot.genotypes
+dev.off()
+
+```
+
+
+### Calculate correlations between all variables
+```{r}
+p13_col = pixels.luminescence %>% filter(Strain=="P13.G4", Accession=="Col-0")
+p13_ey = pixels.luminescence %>% filter(Strain=="P13.G4", Accession=="Ey15-2")
+
+p24_col = pixels.luminescence %>% filter(Strain=="P24.E11", Accession=="Col-0")
+p24_ey = pixels.luminescence %>% filter(Strain=="P24.E11", Accession=="Ey15-2")
+
+p23_col = pixels.luminescence %>% filter(Strain=="P23.A7", Accession=="Col-0")
+p23_ey = pixels.luminescence %>% filter(Strain=="P23.A7", Accession=="Ey15-2")
+
+cor_val = numeric()
+for(rec in list(p13_col, p13_ey, p24_col, p24_ey, p23_col, p23_ey)){
+  cor_val = append(cor_val, wilcox.test(rec$mean_log_luminescence, rec$Pixels_post)$p.value)
+}
+```
+Correcting for multiple testing
+```{r}
+cor_val*6
+```

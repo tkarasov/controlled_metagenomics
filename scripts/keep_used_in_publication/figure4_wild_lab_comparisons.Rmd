@@ -1,0 +1,176 @@
+---
+title: "Comparison between load in lab and in the field"
+author: "Talia_Karasov"
+date: "5/6/2019"
+output: html_document
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+```{r setup, include=FALSE}
+library(reshape2)
+library('dplyr')
+library('tidyr')
+library(ggplot2)
+library(RColorBrewer)
+library(wesanderson)
+require(gridExtra)
+library(grid)
+library(cowplot)
+library(lmtest)
+library(intrval)
+library(Hmisc)
+library(igraph)
+library(extrafont)
+'%!in%' <- function(x,y)!('%in%'(x,y))
+font_import()
+mycolors=c("darkblue", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "lightskyblue", "firebrick", "khaki2", "brown1", "darkorange1", "cyan1", "royalblue4", "darksalmon", "darkblue","royalblue4", "dodgerblue3", "steelblue1", "lightskyblue", "darkseagreen", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "brown1", "darkorange1", "cyan1", "darkgrey")
+
+replace_rr <- function(rr){
+  if(is.na(rr)) return(NA)
+  else if(rr=="I") return(0)
+  else if(rr=="II") return(1)
+  else if(rr=="III") return(2)
+  else if(rr=="IV") return(3)
+  else if(rr=="V") return(4)
+  else if(rr=="VI") return(6)
+  else return(NA)
+}
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+```
+
+```{r, echo = FALSE}
+meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/dc3000_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+meta_pseud=melt(meta[c("Pseudomonadaceae"),], value.name="load", variable.name="Genotype")
+#meta_pseud$Genotype=rownames(meta_pseud)
+meta_pseud$day_ori=sapply(strsplit(as.character(meta_pseud$Genotype), "-"), `[`, 1)
+meta_pseud$Genotype=sapply(strsplit(as.character(meta_pseud$Genotype), "_"), `[`,1)
+meta_pseud$Day=sapply(strsplit(sapply(strsplit(meta_pseud$day_ori, "\\."), `[`, 1), "_R"), `[`,2)
+meta_pseud$Replicate=sapply(strsplit(meta_pseud$day_ori, "\\."), `[`, 2)
+meta_pseud$Replicate=gsub( "_","", meta_pseud$Replicate)
+meta_pseud$Day=sapply(meta_pseud$Day, replace_rr)
+
+#the filter here is different. I didn't filter on ratio.
+pseud_keep=meta_pseud[which(meta_pseud$load!="NA"),]
+pseud_keep=meta_pseud[which(meta_pseud$Genotype!="control"),]
+
+#build frame for pseudomonas
+load_plot=pseud_keep%>% group_by(Day, Genotype) %>% summarise(mean = mean(log10(load+0.0001), na.rm=T), se = sd(log10(load+.0001), na.rm=T) / length(load)) 
+```
+
+But I really want to plot the wild distributions alongside this:
+
+```{r, echo = FALSE}
+concat_name="_bacteria.csv"
+
+g_s=read.csv(paste("~/Dropbox/controlled_metagenomics/results_figures/sweden_germany_combined", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+g_s_otus <- g_s[,which(colnames(g_s)%ni%c("population", "country", "load"))]
+load_hist = data.frame(pseud = log10(g_s$Pseudomonadaceae + .0001), sphingo = log10(g_s$Sphingomonadaceae + 0.0001))
+
+load_hist = melt(load_hist)
+
+both_plot = ggplot(data=load_hist, aes(x=value, fill=variable, color = variable)) + 
+  xlim(c(min(load_hist$value), 2)) +
+  geom_density(alpha=0.3) +
+  coord_flip() +
+  theme( axis.title = element_blank(), legend.position = "Right", axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm"), panel.border = element_blank()) +
+  scale_color_brewer(palette = 1)
+  
+meta_plot = ggplot(load_plot, aes(x=Day, y=mean,  colour=Genotype)) +
+  ylim(c(min(load_hist$value), 2)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
+  geom_point()+theme_bw()+geom_line()+theme_bw()+ 
+  ylab(expression(paste('log'[10],"(Tot. Load)", sep=""))) + theme( legend.position = "none", plot.margin = unit(c(0, 0, 0, 0), "cm")) + scale_color_manual(values = wes_palette(n=3, name="GrandBudapest1")) 
+  
+pdf("~/Dropbox/controlled_metagenomics/results_figures/field_lab_comparison.pdf", family = "ArialMT", height = 2, width = 3, useDingbats = FALSE)
+plot_grid(meta_plot, both_plot, align = "hv", rel_widths = c(1, 1))
+dev.off()
+
+plot_grid(meta_plot, both_plot, align = "hv", rel_widths = c(3, 1))
+#grid.arrange(grobs = list(meta_plot, both_plot), ncol = 2, bottom = 'Index', left = 'Value', right = 'Value')
+```
+
+What percentage of Pseudomonaceae exceeds the max se * 1.96 of 
+```{r, echo = FALSE}
+pseud = load_hist[load_hist$variable == "pseud",]
+sping = load_hist[load_hist$variable == "sphingo",]
+lab_pseud = load_plot[load_plot$Genotype == "avrB",]
+
+
+#2.807 corresponds to 99.5% tail
+lab_pseud$pseud_bound = lab_pseud$mean + 2.807*lab_pseud$se
+above = pseud[pseud$value > max(lab_pseud$pseud_bound),]
+percent_above = dim(above)[1]/dim(pseud)[1]
+#0.05932203
+
+above_spingo = sping[sping$value > max(lab_pseud$pseud_bound),]
+percent_sping_above = dim(above_spingo)[1]/dim(pseud)[1]
+#0
+```
+
+
+
+
+#Now for oomycetes
+```{r, echo = FALSE}
+meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+meta_hpa=melt(meta[c("Peronosporaceae"),], value.name="load", variable.name="Genotype")
+#meta_pseud$Genotype=rownames(meta_pseud)
+meta_hpa$day_ori = meta_hpa$Genotype
+meta_hpa$Genotype = sapply(strsplit(as.character(meta_hpa$Genotype), "\\."), `[`, 2)
+meta_hpa$Day = as.numeric(as.character(gsub("D", "", sapply(strsplit(as.character(meta_hpa$day_ori), "\\."), `[`, 1))))
+#meta_hpa$Replicate=sapply(strsplit(meta_hpa$day_ori, "\\."), `[`, 2)
+#meta_hpa$Replicate=gsub( "_","", meta_hpa$Replicate)
+
+
+#the filter here is different. I didn't filter on ratio.
+hpa_keep=meta_hpa[which(meta_hpa$Genotype!="NA"),]
+hpa_keep=meta_hpa[which(meta_hpa$Genotype!="control"),]
+
+#build frame for pseudomonas
+load_plot=hpa_keep%>% group_by(Day, Genotype) %>% summarise(mean = mean(log10(load+0.0001), na.rm=T), se = sd(log10(load+.0001), na.rm=T) / length(load)) 
+```
+
+
+
+
+#now combine with field data
+```{r, echo = FALSE}
+concat_name="_oomycete.csv"
+
+g_s=read.csv(paste("~/Dropbox/controlled_metagenomics/results_figures/sweden_germany_combined", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+g_s_otus <- g_s[,which(colnames(g_s)%ni%c("population", "country", "load"))]
+load_hist = data.frame(pseud = log10(g_s$Peronosporaceae + .0001), albugo = log10(g_s$Albuginaceae + 0.0001))
+
+load_hist = melt(load_hist)
+
+both_plot = ggplot(data=load_hist, aes(x=value, fill=variable, color = variable)) + 
+  xlim(c(min(load_hist$value), 2)) +
+  geom_density(alpha=0.3) +
+  coord_flip() +
+  theme(axis.title = element_blank(), legend.position = "Right", axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm"), panel.border = element_blank()) +
+  scale_color_brewer(palette = 1)
+  
+meta_plot = ggplot(load_plot, aes(x=Day, y=mean,  colour=Genotype)) +
+  ylim(c(min(load_hist$value), 0)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
+  geom_point()+theme_bw()+geom_line()+theme_bw()+ 
+  ylab(expression(paste('log'[10],"(Tot. Load)", sep=""))) + theme(legend.position = "none", plot.margin = unit(c(0, 0, 0, 0), "cm")) + scale_color_manual(values = wes_palette(n=3, name="GrandBudapest1")) 
+  
+pdf("~/Dropbox/controlled_metagenomics/results_figures/hpa_field_lab_comparison.pdf", family = "ArialMT", height = 2, width = 3, useDingbats = FALSE)
+plot_grid(meta_plot, both_plot, align = "hv", rel_widths = c(1, 1))
+dev.off()
+
+plot_grid(meta_plot, both_plot, align = "hv", rel_widths = c(1, 1))
+#grid.arrange(grobs = list(meta_plot, both_plot), ncol = 2, bottom = 'Index', left = 'Value', right = 'Value')
+```
+
+
+
