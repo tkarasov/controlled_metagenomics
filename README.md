@@ -2,6 +2,16 @@
 ##### Talia Karasov
 This repository contains scripts related to the controlled metagenomic infections performed in 2018 and 2019
 
+## DEPENDENCIES
+### Read Mapping of Plant and Metagenome
+bwa
+picard
+samtools
+centrifuge
+
+### Analysis of metagenomes post-centrifuge
+R
+
 ## SCRIPTS
 #### The general pipeline for assessing metagenomic load can be found in this repository
 * https://github.com/tkarasov/metagenomics_pipeline
