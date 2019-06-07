@@ -6,8 +6,8 @@ This repository contains scripts related to the controlled metagenomic infection
 ### Read Mapping of Plant and Metagenome
 * bwa (version 0.7.17-r1188): https://github.com/lh3/bwa
 * picard: https://broadinstitute.github.io/picard/
-* samtools (1.6-19-g1c03df6 (using htslib 1.6-53-ge539b32)): http://www.htslib.org/
-* centrifuge
+* samtools (version 1.6-19-g1c03df6 (using htslib 1.6-53-ge539b32)): http://www.htslib.org/
+* centrifuge (version 1.0.4): https://ccb.jhu.edu/software/centrifuge/manual.shtml
 
 ### Analysis of metagenomes post-centrifuge
 * R (version 3.5.3: https://www.r-project.org/
