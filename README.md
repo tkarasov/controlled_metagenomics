@@ -6,11 +6,13 @@ This repository contains scripts related to the controlled metagenomic infection
 ### Read Mapping of Plant and Metagenome
 * bwa (version 0.7.17-r1188): https://github.com/lh3/bwa
 * picard: https://broadinstitute.github.io/picard/
-* samtools
-centrifuge
+* samtools (1.6-19-g1c03df6 (using htslib 1.6-53-ge539b32)): http://www.htslib.org/
+* centrifuge
 
 ### Analysis of metagenomes post-centrifuge
-R
+* R (version 3.5.3: https://www.r-project.org/
+* Major R packages
+  ** Vegan (version 2.5.5): https://cran.r-project.org/web/packages/vegan/index.html
 
 ## SCRIPTS
 #### The general pipeline for assessing metagenomic load can be found in this repository
