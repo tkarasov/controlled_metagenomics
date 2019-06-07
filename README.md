@@ -4,9 +4,9 @@ This repository contains scripts related to the controlled metagenomic infection
 
 ## DEPENDENCIES
 ### Read Mapping of Plant and Metagenome
-bwa
-picard
-samtools
+* bwa (version 0.7.17-r1188): https://github.com/lh3/bwa
+* picard: https://broadinstitute.github.io/picard/
+* samtools
 centrifuge
 
 ### Analysis of metagenomes post-centrifuge
