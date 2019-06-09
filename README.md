@@ -23,7 +23,7 @@ The manuscript used the pipeline relevant for centrifuge.
 * [Script to run the whole pipeline](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/centrifuge_total_pipeline.sh)
 
 #### Script-by-Script rundown of the Pipeline to build the metagenome table
-* [Script to remove plant reads from the metagenomes](c)
+* [Script to remove plant reads from the metagenomes](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/run_plantRemoval_tlk_centrifuge.sh)
 * [Script to run centrifuge](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/centrifuge_db.sh)
 * [Script to separate fungal, oomycete and bacterial reads output from centrfiuge](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/classify_eukaryote_prokaryote.py)
 * [Script to recalibrate metagenomic output from centrifuge](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/recalibrate_metagenome_table_centrifuge.py)
