@@ -11,9 +11,9 @@ This repository contains scripts related to the controlled metagenomic infection
 * [centrifuge (version 1.0.4)](https://ccb.jhu.edu/software/centrifuge/manual.shtml)
 
 ### Analysis of metagenomes post-centrifuge
-* R (version 3.5.3): https://www.r-project.org/
+* [R (version 3.5.3)](https://www.r-project.org/)
 * Major R packages
-  * Vegan (version 2.5.5): https://cran.r-project.org/web/packages/vegan/index.html
+  * [vegan (version 2.5.5)](https://cran.r-project.org/web/packages/vegan/index.html)
 
 ## SCRIPTS
 #### The general pipeline for assessing metagenomic load can be found in this repository
