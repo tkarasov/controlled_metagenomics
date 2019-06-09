@@ -44,7 +44,7 @@ The manuscript used the pipeline relevant for centrifuge.
 * German metagenome table
   * [Bacteria](https://github.com/tkarasov/controlled_metagenomics/blob/master/data/german_meta_family_corrected_per_plant_bacteria.csv)
   * [Oomycetes](https://github.com/tkarasov/controlled_metagenomics/blob/master/data/german_meta_family_corrected_per_plant_oomycete.csv)
-  * [Fungi]: (https://github.com/tkarasov/controlled_metagenomics/blob/master/data/german_meta_family_corrected_per_plant_fungi.csv)
+  * [Fungi](https://github.com/tkarasov/controlled_metagenomics/blob/master/data/german_meta_family_corrected_per_plant_fungi.csv)
 
 #### Laboratory infection trials
 * Pst DC3000 infections
