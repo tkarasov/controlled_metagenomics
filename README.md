@@ -35,6 +35,24 @@ The manuscript used the pipeline relevant for centrifuge.
 * [The ncbi taxonomy tree used for family-wise calculation of load](https://github.com/tkarasov/metagenomics_pipeline/blob/master/data/megan_genus_tree_10_2_2018.tre)
 * [The ncbi genome size file](https://github.com/tkarasov/metagenomics_pipeline/blob/master/data/genomes.csv)
 
-#### LABORATORY INFECTION TRIALS
+### Field trials
+* Swedish metagenome table for oomycete:
+ * Bacteria: https://github.com/tkarasov/controlled_metagenomics/blob/master/data/swedish_meta_family_corrected_per_plant_bacteria.csv
+ * Oomycetes: https://github.com/tkarasov/controlled_metagenomics/blob/master/data/swedish_meta_family_corrected_per_plant_oomycete.csv
+ * Fungi: https://github.com/tkarasov/controlled_metagenomics/blob/master/data/swedish_meta_family_corrected_per_plant_fungi.csv
+
+* German metagenome table
+ * Bacteria: https://github.com/tkarasov/controlled_metagenomics/blob/master/data/german_meta_family_corrected_per_plant_bacteria.csv
+ * Oomycetes: https://github.com/tkarasov/controlled_metagenomics/blob/master/data/german_meta_family_corrected_per_plant_oomycete.csv
+ * Fungi: https://github.com/tkarasov/controlled_metagenomics/blob/master/data/german_meta_family_corrected_per_plant_fungi.csv
+
+#### Laboratory infection trials
 * Pst DC3000 infections
+ * Bacteria: https://github.com/tkarasov/controlled_metagenomics/blob/master/data/dc3000_meta_family_corrected_per_plant_bacteria.csv
+ * Oomycetes: https://github.com/tkarasov/controlled_metagenomics/blob/master/data/dc3000_meta_family_corrected_per_plant_oomycete.csv
+ * Fungi: https://github.com/tkarasov/controlled_metagenomics/blob/master/data/dc3000_meta_family_corrected_per_plant_fungi.csv
+ 
 * Hpa infections
+ * Bacteria: https://github.com/tkarasov/controlled_metagenomics/blob/master/data/hpa_meta_family_corrected_per_plant_bacteria.csv
+ * Oomycetes: https://github.com/tkarasov/controlled_metagenomics/blob/master/data/hpa_meta_family_corrected_per_plant_oomycete.csv
+ * Fungi: https://github.com/tkarasov/controlled_metagenomics/blob/master/data/hpa_meta_family_corrected_per_plant_fungi.csv
