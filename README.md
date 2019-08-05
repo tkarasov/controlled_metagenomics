@@ -25,6 +25,7 @@ The manuscript used the pipeline relevant for centrifuge.
 #### Script-by-Script rundown of the Pipeline to build the metagenome table
 * [Script to remove plant reads from the metagenomes](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/run_plantRemoval_tlk_centrifuge.sh)
 * [Script to run centrifuge](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/centrifuge_db.sh)
+* [Script to subsample centrifuge output to look at normalized data](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/subsample_centrifuge_table.py)
 * [Script to separate fungal, oomycete and bacterial reads output from centrfiuge](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/classify_eukaryote_prokaryote.py)
 * [Script to recalibrate metagenomic output from centrifuge](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/recalibrate_metagenome_table_centrifuge.py)
 
