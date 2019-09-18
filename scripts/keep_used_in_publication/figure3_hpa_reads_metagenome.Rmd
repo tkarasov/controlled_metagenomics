@@ -12,7 +12,7 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
 ```{r setup, include=FALSE}
 #This script takes the output for HPA and graphs the read progression
 #samples that need to be corrected in name before processing:
-#D.5.I.5_RunId0091_LaneId1
+#D.5.I.5_RunId0091_LaneId1 renamed
 #control_RunId0091_LaneId1 removed
 
 library(reshape2)
@@ -23,35 +23,71 @@ library(RColorBrewer)
 library(wesanderson)
 '%!in%' <- function(x,y)!('%in%'(x,y))
 mycolors=c("darkblue", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "lightskyblue", "firebrick", "khaki2", "brown1", "darkorange1", "cyan1", "royalblue4", "darksalmon", "darkblue","royalblue4", "dodgerblue3", "steelblue1", "lightskyblue", "darkseagreen", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "brown1", "darkorange1", "cyan1", "darkgrey")
+```
 
 
-#meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
-meta=read.table("/ebio/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+Read in the HpA data
+```{r}
+#need to correct one title manually
+meta = read.table("~/Dropbox/controlled_metagenomics/data/hpa_meta_family_corrected_per_plant_oomycete.csv", sep=",", header=T, row.names = 1)
+#meta=read.table("/ebio/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
 meta_hpa=melt(meta[c("Peronosporaceae"),], value.name="load", variable.name="Genotype")
+
 #meta_pseud$Genotype=rownames(meta_pseud)
 
 #exclude control
-meta_hpa=meta_hpa[-c(meta_hpa$Genotype=="control_RunId0091_LaneId1"),]
-
+meta_hpa = meta_hpa %>% filter(Genotype !="control_RunId0091_LaneId1")
 meta_hpa$Day=as.numeric(as.character(gsub("D", "",sapply(strsplit(as.character(meta_hpa$Genotype), ".", fixed=TRUE), `[`, 1))))
 meta_hpa$Replicate=sapply(strsplit(as.character(meta_hpa$Genotype), ".", fixed=TRUE), `[`,3)
 meta_hpa$Genotype=sapply(strsplit(as.character(meta_hpa$Genotype), ".", fixed=TRUE), `[`,2)
 #meta_pseud$Day=sapply(strsplit(sapply(strsplit(meta_pseud$day_ori, ""), `[`, 1), "_R"), `[`,2)
-load_plot=meta_hpa%>% group_by(Day, Genotype) %>% summarise(mean = mean(load, na.rm=T), se = sd(load, na.rm=T) / length(load))
+load_plot=meta_hpa %>% group_by(Day, Genotype) %>% summarise(mean = mean(load, na.rm=T), se = sd(load, na.rm=T) / length(load))
 ```
 
+Here is the plot of HpA coverage over time
+```{r, echo = FALSE}
+plot_hpa_time <- ggplot(load_plot, aes(x=Day, y=mean, group=Genotype, colour=Genotype)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
+  geom_point()+theme_bw()+
+  geom_line()+theme_bw() + 
+  scale_color_manual(values = wes_palette(n = 3, name="GrandBudapest1")) +
+  ylab("Hpa coverage/Plant coverage")
+
+#pdf("~/Dropbox/controlled_metagenomics/results_figures/hpa_over_time.pdf",  useDingbats=FALSE, width=6, height=4)
+
+plot_hpa_time + scale_x_continuous(breaks = c(0:11))
+
+#dev.off()
+```
+Here is the better plot
 
 ```{r, echo = FALSE}
-plot_hpa_time <- ggplot(load_plot, aes(x=Day, y=mean, group=Genotype, colour=Genotype))+geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
-  geom_point()+theme_bw()+geom_line()+theme_bw()+ scale_color_manual(values = wes_palette(n=2, name="GrandBudapest1"))+ylab("Hpa coverage/Plant coverage")
+plot_hpa_time <- ggplot(meta_hpa, aes(x=Day, y=log10(load), group=Genotype, colour=Genotype)) +
+  geom_jitter(alpha = 0.4, width = 0.2) +
+  stat_summary(fun.data = mean_se, geom = "errorbar" , aes(width=0.25)) +
+  #stat_summary(fun.y = mean, geom="line") +
+  theme_light() + 
+  scale_color_brewer(palette = "Set1") +
+  xlab("Days Post Infection") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+  theme(legend.position = c(.15, .8), legend.title = element_blank(), legend.box.background = element_rect(colour = "grey70"), legend.background = element_rect(fill="transparent"), legend.key.height=unit(.3,"line")) +
+  ylab(expression(log[10]~("Peronsoperaceae Load")))
 
-pdf("~/Dropbox/controlled_metagenomics/results_figures/hpa_over_time.pdf",  useDingbats=FALSE, width=6, height=4)
+pdf("~/Dropbox/controlled_metagenomics/results_figures/hpa_over_time.pdf",  useDingbats=FALSE, width=4, height=3)
+
 plot_hpa_time + scale_x_continuous(breaks = c(0:11))
+
 dev.off()
-#Now for plotting the stacked barplots
+plot_hpa_time + scale_x_continuous(breaks = c(0:11))
+```
+```
+
+Now for plotting the stacked barplots
+```{r}
 #Choose ten most abundant taxa
-meta=within(meta, rm("control_RunId0091_LaneId1"))
-top10=names(sort(rowSums(meta, na.rm=TRUE), decreasing=TRUE )[1:10])
+meta = within(meta, rm("control_RunId0091_LaneId1"))
+top10 = names(sort(rowSums(meta, na.rm=TRUE), decreasing=TRUE )[1:10])
 meta_microbiome=meta[top10,]
 rest=colSums(meta[rownames(meta) %!in% top10, ], na.rm=TRUE)
 meta_microbiome=rbind(meta_microbiome, rest)
@@ -69,20 +105,64 @@ microb_melt=microb_melt[order(microb_melt$Genotype),]
 microb_melt$Gen_Day=paste(microb_melt$Genotype, microb_melt$Day, microb_melt$Replicate, sep=".")
 
 pdf("~/Dropbox/controlled_metagenomics/results_figures/hpa_time_control.pdf")
+
 microb_melt_C=microb_melt[microb_melt$Genotype=="C",]
+microb_melt_I=microb_melt[microb_melt$Genotype=="I",]
+
 p2<- ggplot(data=microb_melt_C, aes(x=Gen_Day, y=value, fill=Family))
+
 p2 + geom_bar(aes(), stat="identity", position="stack") +
-  scale_fill_manual(values =mycolors) +
+  scale_fill_manual(values = mycolors) +
   theme(legend.position="bottom", panel.background = element_blank(), axis.line = element_line(colour = "black")) + guides(fill=guide_legend(nrow=5))+ylim(c(0,0.5))+ylab("Coverage Peronospora/Coverage Plant")
 dev.off()
- 
+
 pdf("~/Dropbox/controlled_metagenomics/results_figures/hpa_time_treated.pdf")
-microb_melt_I=microb_melt[microb_melt$Genotype=="I",]
 p1<- ggplot(data=microb_melt_I, aes(x=Gen_Day, y=value, fill=Family))
+
 p1 + geom_bar(aes(), stat="identity", position="stack") +
   scale_fill_manual(values = mycolors) +
-  theme(legend.position="bottom", panel.background = element_blank(), axis.line = element_line(colour = "black")) + guides(fill=guide_legend(nrow=5))+ylim(c(0,0.5)) +xlab("Day")+ylab("Coverage Peronospora/Coverage Plant")
+  theme(legend.position="bottom", panel.background = element_blank(), axis.line = element_line(colour = "black")) + guides(fill=guide_legend(nrow=5))+ylim(c(0,0.5))+ylab("Coverage Peronospora/Coverage Plant")
+
+
 dev.off()
+```
+
+#```{r, echo = False}
+pdf("~/Dropbox/controlled_metagenomics/results_figures/hpa_time_treated.pdf")
+#microb_melt_I = microbe_melt %>% filter(Genotype=="I")
+p1<- ggplot(data=microb_melt_I, aes(x=Gen_Day, y=value, fill=Family))
+
+p1 + geom_bar(aes(), stat="identity", position="stack") +
+  scale_fill_manual(values = mycolors) +
+  theme(legend.position="bottom", panel.background = element_blank(), axis.line = element_line(colour = "black")) + guides(fill=guide_legend(nrow=5))+ylim(c(0,0.5))+ylab("Coverage Peronospora/Coverage Plant")
+
+dev.off()
+#```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #make a column for Pseudomonas
 per=microb_melt[microb_melt$Family=="Peronosporaceae",]

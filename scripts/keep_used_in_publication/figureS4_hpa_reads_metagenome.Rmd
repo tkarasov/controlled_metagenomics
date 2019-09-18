@@ -39,7 +39,7 @@ g_legend<-function(a.gplot){
 ```
 
 ```{r}
-meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+meta=read.table("~/Dropbox/controlled_metagenomics/data/hpa_meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
 #meta=read.table("/ebio/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
 meta_hpa=melt(meta[c("Peronosporaceae"),], value.name="load", variable.name="Genotype")
 #meta_pseud$Genotype=rownames(meta_pseud)

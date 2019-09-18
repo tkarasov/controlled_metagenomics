@@ -1,0 +1,403 @@
+---
+title: "Figure 2 Diversity"
+author: "Talia_Karasov"
+date: "5/9/2019"
+output: html_document
+---
+
+#The relationship between load and diversity and some statistics about differences between populations
+The goal of this script is to look at the relationship between load and diversity
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      warning=FALSE, message=FALSE)
+```
+
+```{r setup, include= FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(reshape2)
+library('dplyr')
+library('tidyr')
+library(ggplot2)
+library(RColorBrewer)
+library(wesanderson)
+library(matrixStats)
+require(gridExtra)
+library(cowplot)
+library(corrplot)
+#library(moments)
+library(intrval)
+library("Hmisc")
+library(ape)
+library(cowplot)
+library(vegan)
+library(extrafont)
+library(lme4)
+#font_import()
+loadfonts()
+library(betareg)
+source("~/Dropbox/controlled_metagenomics/scripts/keep_used_in_publication/controlled_metagenomics_functions.R")
+
+hue1_12 = c("#02c3b9",
+"#92006a",
+"#01eeba",
+"#320d66",
+"#99b626",
+"#b590ff",
+"#398000",
+"#9a0047",
+"#90e894",
+"#ff768d")
+```
+
+
+Let's look at the relationship in Germany:
+
+First load the bacteria
+```{r, echo = FALSE}
+concat_name="_bacteria.csv"
+g_s_bacteria = read.csv(paste("~/Dropbox/controlled_metagenomics/data/sweden_germany_combined_nodup", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+
+g_s_tot_bacteria = process_gs(g_s_bacteria, subset=FALSE)
+
+```
+
+and find samples that have variance in all three:
+```{r}
+g_s_otus_filter_bacteria = g_s_tot_bacteria[[1]]
+
+g_s_country = g_s_tot_bacteria[[2]]
+
+g_s_pop_bacteria = g_s_tot_bacteria[[3]]
+
+g_s_load_bacteria = g_s_tot_bacteria[[4]]
+
+```
+
+###How is load associated with Shannon Diversity
+
+####Calculate diversity for bacteria
+```{r, echo=FALSE}
+shannon_div <- vegan::diversity(g_s_otus_filter_bacteria, index = "shannon")
+
+simpson_div <- vegan::diversity(g_s_otus_filter_bacteria, index="simpson")
+
+J <- shannon_div/log(specnumber(g_s_otus_filter_bacteria))
+
+richness <- specnumber(g_s_otus_filter_bacteria)
+  
+max_tax_bac=apply(g_s_otus_filter_bacteria, 1, max)
+
+max_tax_names = colnames(g_s_otus_filter_bacteria)[as.integer(apply(g_s_otus_filter_bacteria, 1, which.max))]
+
+tot = read.table("~/Dropbox/controlled_metagenomics/data/original_sweden_germany_combined_bac.txt", header = T, sep = ",", row.names = 1)
+
+tot = tot[names(max_tax_bac),] %>% select(-c("country", "population", "load"))
+
+div_tog_bac = bind_cols(rows = names(max_tax_bac), load_bac = g_s_load_bacteria, shannon = shannon_div, simpson = simpson_div, richness = richness, J = J, max_tax = max_tax_bac, total_bac_reads = rowSums(tot))
+```
+
+Is the pattern driven by an artifact (lower bacterial sequencing = lower diversity)?
+
+```{r}
+pdf("~/Dropbox/controlled_metagenomics/results_figures/shannon_load_cov.pdf", family = "ArialMT", useDingbats = FALSE)
+
+p1 = qplot(log10(total_bac_reads), shannon, data = div_tog_bac) + 
+  theme_light() +
+  xlab("")
+  #xlab(expression(paste('log'[10],"(Bacterial Reads)", sep=""))) +
+  ylab("Shannon's H'")
+
+p2 = qplot(log10(total_bac_reads), richness, data = div_tog_bac) + 
+  theme_light() +
+  xlab(expression(paste('log'[10],"(Bacterial Reads)", sep=""))) +
+  ylab("Species Richness")  
+
+plot_grid(p1, p2, ncol=1)
+
+dev.off()
+
+plot_grid(p1, p2, ncol=1)
+```
+
+There's clearly a relationship between species richness and both load and bacterial reads total. So we must figure out if this is the result of sampling depth or some real phenomenon.
+```{r}
+#randomly sample 1000 reads per row without replacement
+rare = vegan::rrarefy(tot, 1000)
+div_rare = bind_cols(richness = specnumber(rare), rows = names(max_tax_bac), load_bac = g_s_load_bacteria, shannon = shannon_div)
+
+qplot(data = div_rare, x = load_bac, y = richness) + xlab("Bacterial Load") + ylab("Species Richness") + theme_light()
+```
+
+But if the abundance of Pseudomonas were to reduce the abundance of other microbes we would see a negative relationships in the ratios to plant
+```{r}
+g_s_otus_bac <- g_s_bacteria[,which(colnames(g_s_bacteria)%ni%c("population", "country", "load"))]
+otu_sort = g_s_otus_bac[,order(colSums(g_s_otus_bac), decreasing = T)][,c(1:20)]
+cor_mat = rcorr(as.matrix(otu_sort))
+p_mat = cor_mat$P
+p_mat = matrix(p.adjust(p_mat, method = "BH"), nrow = 20, ncol = 20)
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/bac_corr_mat.pdf", family = "ArialMT", useDingbats = FALSE, height = 6, width = 7 )
+corrplot(cor_mat$r, pch = 20, type = "upper", method = "circle", p.mat = p_mat, sig.level = 0.05, insig = "blank",col = brewer.pal(n = 9, name = "PuOr"), tl.cex = 0.5, cl.align.text = 'c', cl.cex = 0.7 )
+dev.off()
+
+```
+
+###Now let's build models to test the relationship between load and other variables
+```{r}
+div_tog = div_tog_bac
+
+load_max_bac = betareg(max_tax ~ load_bac, data = div_tog_bac)
+
+summary(load_max_bac)
+
+cor.test(div_tog_bac$max_tax, div_tog_bac$load_bac, method = "spearman")
+
+```
+
+pull colors for points and recode max_tax_names
+```{r}
+out_bacteria = meta_table("bacteria")
+families1 = sort(unique(out_bacteria$germany$Family))
+colors_families1 = hue1_12[1:length(families1)]
+color_hash = data.frame(key=families1, value=colors_families1)
+
+for(i in 1:length(max_tax_names)){
+  if(max_tax_names[i] %ni% families1){
+    print(i)
+    max_tax_names[i] = "Other"
+  }
+}
+
+re_max = color_hash[match(max_tax_names, color_hash$key),"value"]
+```
+
+###Now we can build the plots
+```{r}
+J_plot_bac<-ggplot(data=div_tog, aes(x=log10(load_bac), y=J)) + 
+  geom_point(pch=20) + 
+  geom_smooth(method='lm', color='red', level=0) +
+  theme_light() + 
+  theme( panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  xlab(expression(paste(' Load (log'[10],"(Total Microb. Cov./Plant Cov.))", sep=""))) +
+  ylab("Evenness (Pielou's J)")
+
+Shannon_div_plot_bac<-ggplot(data=div_tog, aes(x=load_bac, y=shannon)) + 
+  geom_point(pch=20, color = re_max) + 
+  geom_smooth(method='lm', color='gray50', level=0) +
+  theme_light() + 
+  theme( panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  xlab("Total Load") +
+  #xlab(expression(paste(' Load (log'[10],"(Total Microb. Cov./Plant Cov.))", sep=""))) +
+  ylab("Shannon's H'")
+
+max_plot_bac<-ggplot(data=div_tog, aes(x=(load_bac), y=max_tax_bac)) + 
+  geom_point(pch=20, color = re_max) + 
+  scale_color_manual(values = hue1_12) +
+  #geom_smooth(method='lm', color='red', level=0) +
+  geom_line(aes(y = predict(load_max_bac, div_tog_bac)), colour = "gray50") +
+  theme_light() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  xlab("Total Load") +
+  #xlab(expression(paste(' Load (log'[10],"(Total Microb. Cov./Plant Cov.))", sep=""))) +
+  ylab("Maximum Abundance (% of total)") + 
+  scale_y_continuous(labels = function(x) x * 100) 
+  #geom_text(aes(label=ifelse(load_bac>10,as.character(max_tax_names),'')),position=position_jitter(width=.1,height=.1))
+
+
+plot_grid(Shannon_div_plot_bac + xlab(""), max_plot_bac, ncol=1, align = "v")
+```
+
+And plot to file
+```{r}
+pdf(paste(paste("~/Dropbox/controlled_metagenomics/results_figures/div_load", concat_name, sep=""),".pdf",sep=""), family = "ArialMT", useDingbats = FALSE)
+
+plot_grid(Shannon_div_plot_bac + xlab(""), max_plot_bac, ncol=1, align = "v")
+
+dev.off()
+```
+
+###Does load affect the overall evenness of the sample?
+```{r}
+cor.test(g_s_load_bacteria, J)
+
+cor.test(g_s_load_bacteria, shannon_div)
+
+cor.test(g_s_load_bacteria, max_tax_bac)
+```
+
+### Are these trends driven by the outliers?
+```{r}
+med_load = div_tog_bac %>% filter(load_bac<10)
+
+cor.test(med_load$load_bac, med_load$shannon)
+
+cor.test(med_load$load_bac, med_load$simpson)
+
+cor.test(med_load$load_bac, med_load$max_tax)
+
+```
+########WEIRE
+## THESE WERE ATTEMPTS TO CONTROL COVERAGE 
+Instead of raw reads, we are using the metric of coverage per genome.
+#```{r}
+athal_cov = read.csv("~/Dropbox/controlled_metagenomics/data/athaliana_cov_7_2019.csv", header = F, col.names = c("Genotype", "Coverage"))
+athal = data.frame(athal_cov$Coverage)
+rownames(athal) = athal_cov$Genotype
+concat_name="_bacteria.csv"
+g_s1=read.csv(paste("~/Dropbox/controlled_metagenomics/data/sweden_germany_combined", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+g_s1$Genotype = rownames(g_s1)
+#Two samples are messed up
+#g_s = g_s[which(rownames(g_s %ni% c("ULL.5", "Adal.5"), ]
+#Merge the data table with the A. thaliana coverage
+g_s = inner_join(athal_cov, g_s1)
+physeq = merge_phyloseq(g_s)
+phy_deseq_stab = deseq_variance_stab(physeq, deseq_country)
+shannon_div <- vegan::diversity((otu_table(t(phy_deseq_stab))), index = "simpson")
+simpson_div <- vegan::diversity(g_s_otus_filter_bacteria, index="simpson")
+plot(sample_data(phy_deseq_stab)$load, shannon_div)
+
+ot = otu_table(phy_deseq_stab)
+max_tax_bac=apply((otu_table(phy_deseq_stab)), 1, max)
+```
+
+
+
+
+##Oomycetes
+```{r, echo=FALSE}
+concat_name="_oomycete.csv"
+
+g_s_oom=read.csv(paste("~/Dropbox/controlled_metagenomics/data/sweden_germany_combined_nodup", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+
+g_s_tot_oom = process_gs(g_s_oom, subset=FALSE)
+
+g_s_otus_filter_oom = g_s_tot_oom[[1]]
+
+g_s_country_oom = g_s_tot_oom[[2]]
+
+g_s_pop_oom = g_s_tot_oom[[3]]
+
+g_s_load_oom = g_s_tot_oom[[4]]
+
+max_tax_oom=apply(g_s_otus_filter_oom, 1, max)
+
+max_tax_names_oom = colnames(g_s_otus_filter_oom)[as.integer(apply(g_s_otus_filter_oom, 1, which.max))]
+
+```
+
+
+
+
+
+
+
+##Fungi
+```{r, echo=FALSE}
+concat_name="_fungi.csv"
+
+g_s_fungi = read.csv(paste("~/Dropbox/controlled_metagenomics/data/sweden_germany_combined_nodup", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+
+g_s_tot_fungi = process_gs(g_s_fungi, subset=FALSE)
+
+g_s_otus_filter_fungi = g_s_tot_fungi[[1]]
+
+g_s_country_fungi = g_s_tot_fungi[[2]]
+
+g_s_pop_fungi = g_s_fungi[[3]]
+
+g_s_load_fungi = g_s_tot_fungi[[4]]
+
+#max_tax_fungi=apply(g_s_otus_filter_fungi, 1, max)
+max_tax_names_fungi = colnames(g_s_otus_filter_fungi)[as.integer(apply(g_s_otus_filter_fungi, 1, which.max))]
+
+```
+
+
+# Average genome coverage:
+```{r, echo = FALSE}
+g_s_otus_bac <- g_s_bacteria[,which(colnames(g_s_bacteria)%ni%c("population", "country", "load"))]
+g_s_otus_oom <- g_s_oom[,which(colnames(g_s_oom)%ni%c("population", "country", "load"))]
+g_s_otus_fungi <- g_s_fungi[,which(colnames(g_s_fungi)%ni%c("population", "country", "load"))]
+bac_load = data.frame(rowSums(g_s_otus_bac))
+oom_load = data.frame(rowSums(g_s_otus_oom))
+fungi_load = data.frame(rowSums(g_s_otus_fungi))
+names(bac_load) = "Bac_genome_cov"
+names(oom_load) = "Oom_genome_cov"
+names(fungi_load) = "Fun_genome_cov"
+
+load_hist_bac <-ggplot(data = bac_load, aes(x = Bac_genome_cov)) +
+  geom_histogram( bins = 40, fill = "#1B9E77") + 
+  theme_light() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), panel.border = element_rect(colour = "black", fill=NA, size= .5)) +
+  scale_x_continuous(breaks = c(0:30)) +
+  xlab("Estimated Bacterial Chromosomes/Plant Chromosome") +
+  annotate("text", x = 5.5, y = 55, label = c("Bacteria"), cex = 8)
+
+load_hist_oom <-ggplot(data = oom_load, aes(x = Oom_genome_cov)) +
+  geom_histogram( bins = 40, fill = "#1B9E77") + 
+  theme_light() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), panel.border = element_rect(colour = "black", fill=NA, size= .5)) +
+  scale_x_continuous(breaks = c(0:20)/10) +
+  xlab("Estimated Oomycete Chromosome Coverage/Plant Coverage") +
+  annotate("text", x = .55, y = 175, label = c("Oomycete"), cex = 8)
+
+load_hist_fungi <-ggplot(data = fungi_load, aes(x = Fun_genome_cov)) +
+  geom_histogram( bins = 40, fill = "#1B9E77") + 
+  theme_light() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.text.x = element_text(angle = 0, hjust = 1), panel.border = element_rect(colour = "black", fill = NA, size= .5)) +
+  scale_x_continuous(breaks = c(0:10)/100) +
+  xlab("Estimated Fungal Chromosome Coverage/Plant Coverage") +
+  annotate("text", x = .03, y = 30, label = c("Fungus"), cex = 8)
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/mean_load_oom_bac_fungus.pdf", family = "ArialMT", height = 10, width = 5)
+plot_grid(load_hist_bac, load_hist_oom, load_hist_fungi, nrow = 3)
+dev.off()
+```
+
+###Basic statistics on the mean and median abundances of microbes.
+```{r, echo = FALSE}
+median(bac_load$Bac_genome_cov)
+
+mean(bac_load$Bac_genome_cov)
+
+var(bac_load$Bac_genome_cov)
+```
+
+###Does load differ between locations? For this we will not use the processed dataset
+```{r}
+bac_all = process_gs_keep_all(g_s_bacteria)
+fung_all = process_gs_keep_all(g_s_fungi)
+oom_all = process_gs_keep_all(g_s_oom)
+g_s_country = bac_all[[2]]
+g_s_pop = bac_all[[3]]
+g_s_load_bacteria = bac_all[[4]]
+g_s_load_fungi = fung_all[[4]]
+g_s_load_oom = oom_all[[4]]
+
+g_s_all_info = bind_cols(country = g_s_country, pop = g_s_pop, load_bac = g_s_load_bacteria, load_fungi = g_s_load_fungi, load_oom = g_s_load_oom)
+
+g_s_all_info = g_s_all_info[which(is.na(g_s_all_info$pop)==FALSE),]
+
+wilcox.test(g_s_all_info[which(g_s_all_info$country == "germany"),]$load_bac, g_s_all_info[which(g_s_all_info$country == "Sweden"),]$load_bac)
+
+wilcox.test(g_s_all_info[which(g_s_all_info$country == "germany"),]$load_fungi, g_s_all_info[which(g_s_all_info$country == "Sweden"),]$load_fungi)
+
+wilcox.test(g_s_all_info[which(g_s_all_info$country == "germany"),]$load_oom, g_s_all_info[which(g_s_all_info$country == "Sweden"),]$load_oom)
+```
+
+
+What is the effect of population on load?
+#```{r}
+m2 <- lmer(data=g_s_bac_all_info, load ~ 1|country/pop)
+m1 <- update(m2, .~ 1|country)
+
+anova(m1, m2)
+#```
+
+
+
+```

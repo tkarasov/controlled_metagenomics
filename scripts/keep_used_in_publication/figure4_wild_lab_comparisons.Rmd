@@ -47,7 +47,7 @@ g_legend<-function(a.gplot){
 ```
 
 ```{r, echo = FALSE}
-meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/dc3000_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+meta=read.table("~/Dropbox/controlled_metagenomics/data/dc3000_meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
 meta_pseud=melt(meta[c("Pseudomonadaceae"),], value.name="load", variable.name="Genotype")
 #meta_pseud$Genotype=rownames(meta_pseud)
 meta_pseud$day_ori=sapply(strsplit(as.character(meta_pseud$Genotype), "-"), `[`, 1)
@@ -60,6 +60,9 @@ meta_pseud$Day=sapply(meta_pseud$Day, replace_rr)
 #the filter here is different. I didn't filter on ratio.
 pseud_keep=meta_pseud[which(meta_pseud$load!="NA"),]
 pseud_keep=meta_pseud[which(meta_pseud$Genotype!="control"),]
+pointed = pseud_keep #melt(all_keep, id.vars =c("Day", "Genotype", "FINAL", "ratio", "load"))
+pointed$load = log10(pointed$load+0.01)
+
 
 #build frame for pseudomonas
 load_plot=pseud_keep%>% group_by(Day, Genotype) %>% summarise(mean = mean(log10(load+0.0001), na.rm=T), se = sd(log10(load+.0001), na.rm=T) / length(load)) 
@@ -70,9 +73,9 @@ But I really want to plot the wild distributions alongside this:
 ```{r, echo = FALSE}
 concat_name="_bacteria.csv"
 
-g_s=read.csv(paste("~/Dropbox/controlled_metagenomics/results_figures/sweden_germany_combined", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+g_s=read.csv(paste("~/Dropbox/controlled_metagenomics/data//sweden_germany_combined", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
 g_s_otus <- g_s[,which(colnames(g_s)%ni%c("population", "country", "load"))]
-load_hist = data.frame(pseud = log10(g_s$Pseudomonadaceae + .0001), sphingo = log10(g_s$Sphingomonadaceae + 0.0001))
+load_hist = data.frame(pseud = log10(g_s$Pseudomonadaceae + .01), sphingo = log10(g_s$Sphingomonadaceae + 0.01))
 
 load_hist = melt(load_hist)
 
@@ -80,16 +83,32 @@ both_plot = ggplot(data=load_hist, aes(x=value, fill=variable, color = variable)
   xlim(c(min(load_hist$value), 2)) +
   geom_density(alpha=0.3) +
   coord_flip() +
-  theme( axis.title = element_blank(), legend.position = "Right", axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm"), panel.border = element_blank()) +
-  scale_color_brewer(palette = 1)
+    theme_light() +
+  theme(axis.title = element_blank(), legend.position = "Right", axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm"), panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  scale_color_manual(values = c("#CBCE91FF", "#76528BFF")) + 
+  scale_fill_manual(values = c("#CBCE91FF", "#76528BFF"))
+
   
-meta_plot = ggplot(load_plot, aes(x=Day, y=mean,  colour=Genotype)) +
-  ylim(c(min(load_hist$value), 2)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
-  geom_point()+theme_bw()+geom_line()+theme_bw()+ 
-  ylab(expression(paste('log'[10],"(Tot. Load)", sep=""))) + theme( legend.position = "none", plot.margin = unit(c(0, 0, 0, 0), "cm")) + scale_color_manual(values = wes_palette(n=3, name="GrandBudapest1")) 
+
+meta_plot = ggplot(data = pointed, aes(x = Day, y = load, colour = Genotype)) +  
+  geom_jitter(alpha = 0.4, width = 0.2) +
+  stat_summary(fun.data = mean_se, geom = "errorbar", aes(width=0.25)) +
+  #stat_summary(fun.y = mean, geom="line") +
+  theme_light() + 
+  scale_color_manual(values = c("#d8b365", "gray70", "#5ab4ac")) +
+  xlab("Days Post Infection") +
+  ylab(expression(log[10]~("Pseud. Chr/ Plant Chr.")))  +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+  theme(legend.position = c(.15, .8), legend.title = element_blank(), legend.box.background = element_rect(colour = "grey70"), legend.background = element_rect(fill="transparent"), legend.key.height=unit(.3,"line"))
+
+#meta_plot = ggplot(load_plot, aes(x=Day, y=mean,  colour=Genotype)) +
+#  ylim(c(min(load_hist$value), 2)) +
+#  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
+#  geom_point()+theme_bw()+geom_line()+theme_bw()+ 
+#  ylab(expression(paste('log'[10],"(Tot. Load)", sep=""))) + theme( legend.position = "none", plot.margin = unit(c(0, 0, 0, 0), "cm")) + scale_color_manual(values = wes_palette(n=3, name="GrandBudapest1")) 
   
-pdf("~/Dropbox/controlled_metagenomics/results_figures/field_lab_comparison.pdf", family = "ArialMT", height = 2, width = 3, useDingbats = FALSE)
+pdf("~/Dropbox/controlled_metagenomics/results_figures/field_lab_comparison.pdf", family = "ArialMT", height = 4, width = 7.2, useDingbats = FALSE)
 plot_grid(meta_plot, both_plot, align = "hv", rel_widths = c(1, 1))
 dev.off()
 
@@ -120,7 +139,7 @@ percent_sping_above = dim(above_spingo)[1]/dim(pseud)[1]
 
 #Now for oomycetes
 ```{r, echo = FALSE}
-meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/hpa_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+meta=read.table("~/Dropbox/controlled_metagenomics/data/hpa_meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
 meta_hpa=melt(meta[c("Peronosporaceae"),], value.name="load", variable.name="Genotype")
 #meta_pseud$Genotype=rownames(meta_pseud)
 meta_hpa$day_ori = meta_hpa$Genotype
@@ -145,7 +164,7 @@ load_plot=hpa_keep%>% group_by(Day, Genotype) %>% summarise(mean = mean(log10(lo
 ```{r, echo = FALSE}
 concat_name="_oomycete.csv"
 
-g_s=read.csv(paste("~/Dropbox/controlled_metagenomics/results_figures/sweden_germany_combined", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+g_s=read.csv(paste("~/Dropbox/controlled_metagenomics/data/sweden_germany_combined_nodup", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
 g_s_otus <- g_s[,which(colnames(g_s)%ni%c("population", "country", "load"))]
 load_hist = data.frame(pseud = log10(g_s$Peronosporaceae + .0001), albugo = log10(g_s$Albuginaceae + 0.0001))
 
@@ -155,16 +174,29 @@ both_plot = ggplot(data=load_hist, aes(x=value, fill=variable, color = variable)
   xlim(c(min(load_hist$value), 2)) +
   geom_density(alpha=0.3) +
   coord_flip() +
-  theme(axis.title = element_blank(), legend.position = "Right", axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm"), panel.border = element_blank()) +
-  scale_color_brewer(palette = 1)
+  theme_light() +
+  theme(axis.title = element_blank(), legend.position = "Right", axis.text = element_blank(), axis.line = element_blank(), axis.ticks = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm"), panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  scale_color_brewer(palette = 2)
+
+meta_plot =  ggplot(hpa_keep, aes(x=Day, y=log10(load), group=Genotype, colour=Genotype)) +
+  geom_jitter(alpha = 0.4, width = 0.2) +
+  stat_summary(fun.data = mean_se, geom = "errorbar" , aes(width=0.25)) +
+  #stat_summary(fun.y = mean, geom="line") +
+  theme_light() + 
+  scale_color_brewer(palette = "Set1") +
+  xlab("Days Post Infection") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+  theme(legend.position = c(.15, .8), legend.title = element_blank(), legend.box.background = element_rect(colour = "grey70"), legend.background = element_rect(fill="transparent"), legend.key.height=unit(.3,"line")) +
+  ylab(expression(log[10]~("Peronsoperaceae Load")))
   
-meta_plot = ggplot(load_plot, aes(x=Day, y=mean,  colour=Genotype)) +
-  ylim(c(min(load_hist$value), 0)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
-  geom_point()+theme_bw()+geom_line()+theme_bw()+ 
-  ylab(expression(paste('log'[10],"(Tot. Load)", sep=""))) + theme(legend.position = "none", plot.margin = unit(c(0, 0, 0, 0), "cm")) + scale_color_manual(values = wes_palette(n=3, name="GrandBudapest1")) 
+#meta_plot = ggplot(load_plot, aes(x=Day, y=mean,  colour=Genotype)) +
+#  ylim(c(min(load_hist$value), 0)) +
+#  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.1) +
+#  geom_point()+theme_bw()+geom_line()+theme_bw()+ 
+#  ylab(expression(paste('log'[10],"(Tot. Load)", sep=""))) + theme(legend.position = "none", plot.margin = unit(c(0, 0, 0, 0), "cm")) + scale_color_manual(values = wes_palette(n=3, name="GrandBudapest1")) 
   
-pdf("~/Dropbox/controlled_metagenomics/results_figures/hpa_field_lab_comparison.pdf", family = "ArialMT", height = 2, width = 3, useDingbats = FALSE)
+pdf("~/Dropbox/controlled_metagenomics/results_figures/hpa_field_lab_comparison.pdf", family = "ArialMT", height = 4, width = 7.2, useDingbats = FALSE)
 plot_grid(meta_plot, both_plot, align = "hv", rel_widths = c(1, 1))
 dev.off()
 

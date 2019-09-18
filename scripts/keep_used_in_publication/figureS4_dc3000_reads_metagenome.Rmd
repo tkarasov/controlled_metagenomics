@@ -56,7 +56,7 @@ g_legend<-function(a.gplot){
 
 
 ```{r}
-meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/dc3000_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+meta=read.table("~/Dropbox/controlled_metagenomics/data/dc3000_meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
 #meta=read.table("/ebio/abt6_projects9/metagenomic_controlled/data/processed_reads/dc3000_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
 top10=names(sort(rowSums(meta, na.rm=TRUE), decreasing=TRUE )[1:10])
 meta_microbiome=meta[top10,]

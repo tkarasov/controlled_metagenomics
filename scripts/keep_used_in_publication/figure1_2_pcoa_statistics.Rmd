@@ -1,0 +1,452 @@
+---
+title: "Microbiome analysis of Germany and Sweden"
+author: "Talia_Karasov"
+date: "5/3/2019"
+output: html_document
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width = 12, fig.height = 8, fig.path ='Figs/',
+                      echo = FALSE, warning = FALSE, message = FALSE, cache = TRUE)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(reshape2)
+library('dplyr')
+library('tidyr')
+library(ggplot2)
+library(RColorBrewer)
+library(wesanderson)
+library(matrixStats)
+require(gridExtra)
+library(cowplot)
+#library(moments)
+library(intrval)
+library("Hmisc")
+library(ape)
+library(cowplot)
+library(vegan)
+library(extrafont)
+library(lme4)
+library(ape)
+library(ggthemes)
+library(knitr)
+#font_import()
+loadfonts()
+
+source("~/Dropbox/controlled_metagenomics/scripts/keep_used_in_publication/controlled_metagenomics_functions.R")
+
+hue1_12 = c("#02c3b9",
+"#92006a",
+"#01eeba",
+"#320d66",
+"#99b626",
+"#b590ff",
+"#398000",
+"#9a0047",
+"#90e894",
+"#ff768d")
+
+hue13_25 =c("#007e31",
+"#e05f2f",
+"#0188d1",
+"#a66600",
+"#3f5300",
+"#ff9a82",
+"#f5d06c")
+
+adonis2_sim <-function(select_g_s , populations = populations){
+  i = 0 
+  keep_pop = matrix(ncol = 7, nrow = 9)
+  rownames(keep_pop) = populations
+  for(rec in populations){
+    i = i+1
+    subset = which(g_s_pop_com == rec)
+    sampling = sample(subset, 7, replace = FALSE)
+    keep_pop[i,] = sampling
+  }
+  
+  g_s_subset = data.frame(select_g_s[unlist(keep_pop),])
+  bc_limited = bc_comp[unlist(keep_pop), unlist(keep_pop)]
+  adonis_output = adonis2(bc_limited ~ g_s_subset$country / g_s_subset$pop + g_s_subset$load, strata = g_s_subset$country)
+  return(adonis_output)
+}
+```
+
+#Load vs. microbiome composition
+This script explores the relationship between load and microbiome for the german and swedish datasets and graphs the microbiomes of these datasets
+
+###Filtering
+First thing is to remove the offending columns from the german dataset and then to combine the metagenome files. These tasks are done with the clean_tables script:
+```{r, echo = TRUE}
+source("~/Dropbox/controlled_metagenomics/scripts/keep_used_in_publication/clean_tables.R")
+```
+
+
+###Analysis
+####Overall Comparison of Composition
+The goal of this next part is to generate figures side-by-side that will take the metagenome corrected tables for germany and sweden and graph the bar plots next to one another
+
+OK, now we never have to deal with filtering again. Now we want to generate the side by side histograms of loads
+```{r, echo = FALSE}
+out_bacteria = meta_table("bacteria")
+grouped_german = out_bacteria$germany %>% group_by(Family) 
+grouped_sweden =  out_bacteria$sweden %>% group_by(Family) 
+
+#This smaller subset is the lower three quantiles of load
+out_bac_small = reduce_melted(out_bacteria, 0.75)
+
+p_bac = plot_side_by_side(out_bacteria, colors = hue1_12) 
+p_bac_small = plot_side_by_side(out_bac_small, hue1_12)
+
+out_fungi = meta_table("fungi")
+p_fungi = plot_side_by_side(out_fungi, colors = hue13_25)
+
+out_oom=meta_table("oomycete")
+out_oom_small = reduce_melted(out_oom, 0.75)
+
+p_oom = plot_side_by_side(out_oom, colors = hue13_25)
+p_oom_small = plot_side_by_side(out_oom_small, hue13_25)
+
+
+print("German Bacteria")
+summarise(grouped_german, mean = mean(value, na.rm = TRUE)) %>% arrange(mean)
+
+print("Swedish Bacteria")
+summarise(grouped_sweden, mean = mean(value, na.rm = TRUE)) %>% arrange(mean)
+#p_bac = plot_side_by_side(out_bacteria, colors = sample(RColorBrewer::brewer.pal(n=9, 'Paired'),9))
+
+out_fungi = meta_table("fungi")
+grouped_german = out_fungi$germany %>% group_by(Family) 
+grouped_sweden =  out_fungi$sweden %>% group_by(Family) 
+
+print("German Fungi")
+summarise(grouped_german, mean = mean(value, na.rm = TRUE)) %>% arrange(mean)
+
+print("Swedish Fungi")
+summarise(grouped_sweden, mean = mean(value, na.rm = TRUE)) %>% arrange(mean)
+#p_fungi=plot_side_by_side(out_fungi, colors = sample(RColorBrewer::brewer.pal(n=9, 'Paired'),9))
+
+out_oom=meta_table("oomycete")
+grouped_german = out_oom$germany %>% group_by(Family) 
+grouped_sweden =  out_oom$sweden %>% group_by(Family) 
+
+print("German Oomycetes")
+summarise(grouped_german, mean = mean(value, na.rm = TRUE)) %>% arrange(mean)
+
+print("Swedish Oomycetes")
+summarise(grouped_sweden, mean = mean(value, na.rm = TRUE)) %>% arrange(mean)
+#p_oom=plot_side_by_side(out_oom, colors = sample(RColorBrewer::brewer.pal(n=8, 'Dark2'),8))
+```
+
+Plot histogram of total loads of Oomycete, Fungi and Bacteria
+```{r}
+bacteria_germany = out_bacteria$germany %>% group_by(variable) %>% summarise("Total_Load"=sum(value))
+bacteria_sweden  = out_bacteria$sweden %>% group_by(variable) %>% summarise("Total_Load"=sum(value))
+bacteria = (data.frame("Total_Load" = c(bacteria_germany$Total_Load, bacteria_sweden$Total_Load)))
+
+fungi_germany = out_fungi$germany %>% group_by(variable) %>% summarise("Total_Load"=sum(value))
+fungi_sweden  = out_fungi$sweden %>% group_by(variable) %>% summarise("Total_Load"=sum(value))
+fungi = (data.frame("Total_Load" = c(fungi_germany$Total_Load, fungi_sweden$Total_Load))) 
+
+oomycete_germany = out_oom$germany %>% group_by(variable) %>% summarise("Total_Load"=sum(value))
+oomycete_sweden  = out_oom$sweden %>% group_by(variable) %>% summarise("Total_Load"=sum(value))
+oomycete = (data.frame("Total_Load" = c(oomycete_germany$Total_Load, oomycete_sweden$Total_Load)))
+
+b_1 = ggplot(data = bacteria, aes(Total_Load)) +
+  geom_histogram( bins = 40) +
+  theme_tufte_revised() + 
+  xlab("") +
+  annotate("text",  x = Inf, y = Inf, label = "Bacteria", cex = 5, hjust = 2, vjust = 2) 
+
+f_1 = ggplot(data = fungi, aes(Total_Load)) +
+  geom_histogram( bins = 40) +
+  theme_tufte_revised() + 
+  xlab("") +
+  annotate("text",  x = Inf, y = Inf, label = "Fungi", vjust=2, hjust=2, cex = 5) 
+
+o_1 = ggplot(data = oomycete, aes(Total_Load)) +
+  geom_histogram( bins = 40) +
+  theme_tufte_revised() + 
+  xlab("Total Load") +
+  annotate("text",  x = Inf, y = Inf, label = "Oomycete", hjust = 2, vjust = 2, cex = 5) 
+
+all_three = plot_grid(b_1, f_1, o_1, nrow = 3, labels = c("A", "B", "C"))
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/hist_load.pdf", width = 3.46, family = "ArialMT" )
+all_three
+dev.off()
+```
+
+The average load of bacteria is:
+```{r}
+summarise(bacteria, mean = mean(Total_Load), sd = sd(Total_Load))
+```
+
+The average load of fungi is:
+```{r}
+summarise(fungi, mean = mean(Total_Load), sd = sd(Total_Load))
+```
+
+The average load of oomycete is:
+```{r}
+summarise(oomycete, mean = mean(Total_Load), sd = sd(Total_Load))
+```
+
+\
+These are the side-by-side histogram plots
+```{r }
+p_tot=plot_grid(p_bac, p_oom, ncol=2, align = 'h')
+p_tot
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/oomycete_bacteria_germany_sweden.pdf", family = "ArialMT", width = 8, height = 5)
+p_tot
+dev.off()
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/oomycete_germany_sweden.pdf", family = "ArialMT", height = 5, width = 5)
+p_oom
+dev.off()
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/small_oomycete_germany_sweden.pdf", family = "ArialMT", height = 5, width = 5)
+p_oom_small
+dev.off()
+
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/bacteria_germany_sweden.pdf", family = "ArialMT", height = 5, width = 5)
+p_bac
+dev.off()
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/small_bacteria_germany_sweden.pdf", family = "ArialMT", height = 5, width = 5)
+p_bac_small
+dev.off()
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/fungi_germany_sweden.pdf", family = "ArialMT", height = 5, width = 5)
+p_fungi
+dev.off()
+
+```
+
+
+
+###Permutational multivariate analysis of variance using distance matrices  (WITH BRAY-CURTIS DISTANCES)
+###Bacteria
+First we will look at those reads classified as bacterial. We will perform principal coordinate analysis on the bray-curtis disimilarity to assess how load relates to similarity of microbiome content.
+
+```{r, echo=FALSE}
+
+concat_name="_bacteria.csv"
+
+g_s = read.csv(paste("~/Dropbox/controlled_metagenomics/data/sweden_germany_combined_nodup", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+
+g_s_tot = process_gs(g_s, subset=FALSE)
+
+g_s_otus_filter = g_s_tot[[1]]
+
+g_s_country = g_s_tot[[2]]
+
+g_s_pop = g_s_tot[[3]]
+
+g_s_load = g_s_tot[[4]]
+
+bray_curtis = as.matrix( vegdist(g_s_otus_filter, method="bray", binary=FALSE, diag=FALSE, upper=FALSE, na.rm = FALSE) )
+```
+
+We are using adonis to do the multivariate testing.
+Here is some advice on nesting:
+https://stats.stackexchange.com/questions/188519/adonis-in-vegan-order-of-variables-or-use-of-strata
+
+Difficulty: I have unbalanced designs to which permanova may be sensitive. To test for differences in dispersion I can use the beta dispersion function in vegan
+
+```{r}
+#exclude NA
+bc_comp = bray_curtis[which(!is.na(g_s_pop)), which(!is.na(g_s_pop))]
+g_s_load_com = g_s_load[which(!is.na(g_s_pop))]
+g_s_pop_com = g_s_pop[which(!is.na(g_s_pop))]
+g_s_country_com = g_s_country[which(!is.na(g_s_pop))]
+disp = betadisper(d = as.dist(bc_comp), group = as.factor(g_s_country_com))
+permutest(disp)
+```
+That's not good. The dispersion does seem to be significantly different between groups. 
+
+I guess we need to bootstrap the NextMet samples
+```{r}
+table(g_s_pop_com)
+table(g_s_country_com)
+german = table(g_s_country_com)[1]
+sweden = table(g_s_country_com)[2]
+german_list = which(g_s_country_com == "germany")
+swedish_list = which(g_s_country_com == "Sweden")
+```
+
+```{r}
+#run adonis2 100 times with different subsets from germany
+value = matrix(ncol = 2, nrow = 100)
+colnames(value) = c("country", "load")
+
+for(i in 1:100){
+  german_sub = sample(german_list, size = as.numeric(sweden))
+  full = c(german_sub, swedish_list)
+  adon = adonis2(bc_comp[full, full] ~ g_s_country_com[full] + g_s_load_com[full])
+  value[i,1] = adon$R2[1]
+  value[i,2] = adon$R2[2]
+}
+
+#pop_mv = adonis2(bc_comp ~ g_s_pop_com / g_s_country_com + g_s_load_com, strata = g_s_pop_com )
+#country_mv = adonis2(bc_comp ~ g_s_country_com + g_s_load_com)
+
+```
+
+I think I should also do the pcoa with just a subset of individuals from each populatioh
+```{r}
+populations = unique(g_s_pop_com)
+select_g_s = cbind(g_s_country_com, g_s_pop_com, g_s_load_com)
+colnames(select_g_s) = c("country", "pop", "load")
+
+adon_mat = matrix(nrow = 100, ncol = 6)
+colnames(adon_mat) = c("R2_country", "R2_load", "R2_pop", "pval_country", "pval_load", "pval_pop")
+```
+
+Bootstrap the adonis value 100 times
+```{r}
+
+for(i in 1:100){
+    z = 0
+    keep_pop = matrix(ncol = 8, nrow = 9)
+    rownames(keep_pop) = populations
+    for(rec in populations){
+      z = z + 1
+      subset = which(g_s_pop_com == rec)
+      sampling = sample(subset, 8, replace = FALSE)
+      keep_pop[z,] = sampling
+    }
+  g_s_subset = data.frame(select_g_s[unlist(keep_pop),])
+  g_s_subset$load = as.numeric(as.character(g_s_subset$load))
+  bc_limited = bc_comp[unlist(keep_pop), unlist(keep_pop)]
+  boot = adonis2(bc_limited ~ g_s_subset$country / g_s_subset$pop + g_s_subset$load, strata = g_s_subset$country)
+  #boot = adonis2_sim(select_g_s = select_g_s , populations = populations)
+  adon_mat[i,1] = boot$R2[1]
+  adon_mat[i,2] = boot$R2[2]
+  adon_mat[i,3] = boot$R2[3]
+  adon_mat[i,4:6] = boot$`Pr(>F)`[1:3]
+}
+
+summary(adon_mat)
+```
+
+What is the dispersion of this subset?
+```{r}
+disp =  betadisper(d = as.dist(bc_limited), group = as.factor(g_s_subset$pop))
+permutest(disp)
+
+```
+
+###PCoA on bray-curtis of more balanced sample
+```{r}
+bc_pcoa = pcoa(bc_limited, correction = "lingoes")
+perc_explained = bc_pcoa$values[,3]
+```
+
+Do PC1 and PC2 distinguish between samples from germany vs sweden?
+First PC1:
+```{r, echo = FALSE}
+pc1 = bc_pcoa$vectors[,1]
+german_pc1 = pc1[g_s_subset$country=="germany"]
+sweden_pc1 = pc1[g_s_subset$country=="Sweden"]
+wilcox.test(german_pc1, sweden_pc1)
+#p=0.1486 W=5367
+```
+
+Next PC2:
+```{r, echo = FALSE}
+pc2 = bc_pcoa$vectors[,2]
+german_pc2 = pc2[g_s_subset$country=="germany"]
+sweden_pc2 = pc2[g_s_subset$country=="Sweden"]
+wilcox.test(german_pc2, sweden_pc2)
+#p=2.2e-16 W=8645
+```
+
+
+
+Let's plot an example of subsampled data and PCoA
+```{r}
+bc_limited = bc_comp[unlist(keep_pop), unlist(keep_pop)]
+g_s_pop_limited = g_s_pop_com[unlist(keep_pop)]
+g_s_country_limited = g_s_country_com[unlist(keep_pop)]
+g_s_load_limited = g_s_load_com[unlist(keep_pop)]
+
+load_pcoa  =  ggplot(data=data.frame(bc_pcoa$vectors), aes(x=Axis.1, y=Axis.2)) + 
+  geom_point(aes(color=log10(g_s_load_limited)), cex = 2) +
+  scale_color_gradient2(name = "", low = "blue", mid = "white", high = "red") +
+  theme_bw() + theme( panel.grid.major = element_blank(), panel.grid.minor = element_blank(), text = element_text(size = 12)) +
+  labs(x=NULL, y = NULL) + 
+  #xlab(paste(paste("Axis 1:", (100*round(perc_explained[1],3)), sep=" "), "%", sep="")) +
+  theme(legend.key.width=unit(1,"cm"), axis.title.y = element_blank(), axis.text.y = element_blank(), legend.text.align = 1, legend.title = element_blank(), legend.position = 'bottom')
+
+country_pcoa = pop_pcoa  = ggplot(data=data.frame(bc_pcoa$vectors), aes(x=Axis.1, y=Axis.2)) + 
+  geom_point(aes(color = g_s_country_limited), cex = 2) +
+  scale_color_discrete(name="Country") +
+  theme_bw() + theme( panel.grid.major = element_blank(), panel.grid.minor = element_blank(), text = element_text(size = 12)) +
+ labs(y=NULL, x = NULL) +
+ theme(legend.key.width=unit(1,"cm"), axis.title.y = element_blank(),legend.title = element_blank(), legend.position = 'bottom') +
+ scale_color_calc()
+
+pop_pcoa  = ggplot(data=data.frame(bc_pcoa$vectors), aes(x=Axis.1, y=Axis.2)) + 
+  geom_point(aes(color = g_s_pop_limited), cex = 2) +
+  scale_color_discrete(name="pop") +
+  scale_color_brewer(palette = "Set1") +
+  theme_bw() + theme( panel.grid.major = element_blank(), panel.grid.minor = element_blank(), text = element_text(size = 12))  +
+ labs(y=NULL, x = NULL) +
+ theme(legend.key.width=unit(1,"cm"), axis.title.y = element_blank(), legend.title = element_blank(), axis.text.y = element_blank(), legend.position = 'bottom') 
+
+gA  =  ggplotGrob(load_pcoa)
+gB  =  ggplotGrob(pop_pcoa)
+gC  =  ggplotGrob(country_pcoa)
+gA$widths  =  gB$widths = gC$widths
+gA$heights = gB$heights = gC$heights
+
+grid.arrange(gC, gB, gA, ncol = 3, left = paste(paste("Axis 2:", (100*round(perc_explained[2],3)), sep=" "), "%", sep=""), bottom = paste(paste("Axis 1:", (100*round(perc_explained[1],3)), sep=" "), "%", sep=""))
+
+pdf(paste(paste("~/Dropbox/controlled_metagenomics/results_figures/pcoa_bray_curtis_", concat_name, sep=""), ".pdf", sep=""), family = "ArialMT", useDingbats=FALSE, width = 7.204, height = 4)
+
+grid.arrange(gC, gB, gA, ncol = 3, left = paste(paste("Axis 2:", (100*round(perc_explained[2],3)), sep=" "), "%", sep=""), bottom = paste(paste("Axis 1:", (100*round(perc_explained[1],3)), sep=" "), "%", sep=""))
+
+dev.off()
+```
+
+What about looking just in Eyach?
+```{r}
+eyach = which(g_s_pop_com == "Eyach")
+g_s_load_com_eyach = g_s_load_com[eyach]
+bc_comp_eyach = bc_comp[eyach, eyach]
+
+adonis2(bc_comp_eyach ~ g_s_load_com_eyach)
+
+adonis2(bc_comp ~ g_s_load_com)
+```
+
+Which microbe has the highest mean load across samples in a region?
+```{r}
+find_top_abundance(g_s_otus_filter)
+```
+
+
+What is the relationship between load and PC1?
+#```{r}
+cor.test(g_s_load, pc1)
+```
+
+
+# ```{r, echo = FALSE}
+german_samples = read.table("~/Dropbox/germany_pathogen_collections/sample_data/plate_sample_locations/sample_infoFinal_2018.txt", sep="\t", header=T)
+
+duplicated samples (samples collected or sequenced twice)
+keep = german_samples[-which(duplicated(german_samples$uniqueID)),]
+no_keep = as.character(german_samples[which(duplicated(german_samples$uniqueID)),]$metagenome_identifier)
+#These have too few reads: NextMet175, NextMet193, NextMet194, NextMet55
+#These are the controls
+#duplicated: NextMet24, NextMet50, NextMet66, NextMet70, NextMet83, NextMet85, NextMet87, NextMet96, NextMet119, NextMet131, NextMet142, NextMet144
+
+keep = keep[which(keep$uniqueID %ni% c("NextMet175", "NextMet193", "NextMet194", "NextMet55")),]
+no_keep = c(no_keep, c("NextMet175", "NextMet193", "NextMet194", "NextMet55")) 
+```
+

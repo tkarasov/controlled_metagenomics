@@ -13,8 +13,107 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
 ```{r}
 library(ggmap)
 library(ggsn)
+library(maps)
+library("rnaturalearth")
+library("rnaturalearth")
+library("sf")
+library(sp)
+library("ggspatial")
 #plot locations of collections
+```
 
+```{r}
+plot_region <- function(locations, city_size, nudge = 0.05){
+  #ne_rivers <- ne_download(scale = 50, type = 'rivers_lake_centerlines', category = 'physical')
+#sp::plot(rivers50)
+  data(world.cities)
+  world.cities <- world.cities[world.cities$pop>city_size,]
+  coordinates(world.cities) <- ~long+lat 
+  proj4string(world.cities) <- '+init=epsg:4326'
+  cities_fin = data.frame(name = world.cities$name, coordinates(world.cities))
+  world <- ne_countries(scale = "medium", returnclass = "sf")
+class(world)
+  height = max(locations$Latitude) - min(locations$Latitude) 
+  width = max(locations$Longitude) - min(locations$Longitude)
+  borders = c(bottom = min(locations$Latitude) - 0.2 * height, 
+            top = max(locations$Latitude) + 0.2 * height,
+            left = min(locations$Longitude) - 0.2 * width,
+            right = max(locations$Longitude) + 0.2 * width)
+  #river.subset = river.subset <- quick.subset(ne_rivers, borders)
+
+  p1 = ggplot(data = world) +
+    geom_sf() +
+    annotation_scale(location = "bl", width_hint = 0.5) +
+    #annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering) +
+    coord_sf(xlim = c(borders['left'], borders['right']), ylim = c(borders['bottom'], borders['top'])) +
+    geom_point(data = locations, mapping = aes(x = Longitude, y = Latitude), color = "#FF5A0088", cex = 3) +
+    theme_bw() +
+  geom_point(data = data.frame(cities_fin), aes(x=long, y=lat), col='grey40', pch=20, cex=1) +
+    geom_text(data=cities_fin, aes(x=long, y=cities_fin$lat, label=cities_fin$name), hjust = 0, nudge_x = nudge, color = "grey40") 
+  # +  geom_path(data=river.subset, aes(x = long, y = lat, group = group), color = 'blue')
+  return(p1)
+  }
+```
+
+Germany
+```{r}
+locations=read.table("~/Dropbox/germany_pathogen_collections/data_files_rmarkdown/location_sampling_lat_long.txt",header=T)
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/german1_map_7_2019.pdf", useDingbats = FALSE, family = "ArialMT")
+plot_region(locations, 10000, nudge = 0.01)
+dev.off()
+
+```
+
+But we also need a zoomed out German
+```{r}
+data(world.cities)
+city_size = 100000
+world.cities <- world.cities[world.cities$pop>city_size,]
+coordinates(world.cities) <- ~long+lat 
+proj4string(world.cities) <- '+init=epsg:4326'
+cities_fin = data.frame(name = world.cities$name, coordinates(world.cities))
+world <- ne_countries(scale = "medium", returnclass = "sf")
+class(world)
+height = max(locations$Latitude) - min(locations$Latitude) 
+width = max(locations$Longitude) - min(locations$Longitude)
+borders = c(bottom = 47.3, 
+            top = 49,
+            left = 7.5,
+            right = 10)
+  #river.subset = river.subset <- quick.subset(ne_rivers, borders)
+p_overall = ggplot(data = world) +
+    geom_sf() +
+    annotation_scale(location = "bl", width_hint = 0.5) +
+    #annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering) +
+    coord_sf(xlim = c(borders['left'], borders['right']), ylim = c(borders['bottom'], borders['top'])) +
+    theme_bw() +
+  geom_point(data = data.frame(cities_fin), aes(x=long, y=lat), col='grey40', pch=20, cex=1) +
+    geom_text(data=cities_fin, aes(x=long, y=cities_fin$lat, label=cities_fin$name), hjust = 0, nudge_x = 0.05, color = "grey40") 
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/german1_overall_7_2019.pdf", useDingbats = FALSE, family = "ArialMT") 
+p_overall 
+dev.off()
+```
+
+Sweden
+```{r}
+#sweden
+locations=read.table("~/Dropbox/controlled_metagenomics/Swedish_samples/swedish_sites.txt",header=T, sep="\t")
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/swedish1_map_7_2019.pdf", useDingbats = FALSE, family = "ArialMT")
+plot_region(locations, 500000)
+dev.off()
+```
+
+
+
+
+
+
+
+
+DEPRECATED BELOW!
 
 scalebar = function(x,y,w,n,d, units="km"){
   # x,y = lower left coordinate of bar
@@ -58,9 +157,6 @@ map = get_stamenmap(borders, zoom = 10, maptype = "toner-lite")
 ggmap(map) +
   geom_point(data = locations, mapping = aes(x = Longitude, y = Latitude), color = "RED", cex = 4) +
   geom_rect(data=sb[[1]], aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill=z), inherit.aes=F, show.legend = F,  color = "black", fill = sb[[1]]$fill.col)+geom_text(data=sb[[2]], aes(x=xlab, y=ylab, label=text), inherit.aes=F, show.legend = F) 
-
-dev.off()
-
 
 dev.off()
 
