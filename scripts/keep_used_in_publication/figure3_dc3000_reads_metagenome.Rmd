@@ -28,23 +28,9 @@ font_import()
 
 mycolors=c("darkblue", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "lightskyblue", "firebrick", "khaki2", "brown1", "darkorange1", "cyan1", "royalblue4", "darksalmon", "darkblue","royalblue4", "dodgerblue3", "steelblue1", "lightskyblue", "darkseagreen", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "brown1", "darkorange1", "cyan1", "darkgrey")
 
-myhue = c("#02c3b9",
-"#92006a",
-"#01eeba",
-"#320d66",
-"#99b626",
-"#b590ff",
-"#398000",
-"#9a0047",
-"#90e894",
-"#ff768d",
-"#007e31",
-"#e05f2f",
-"#0188d1",
-"#a66600",
-"#3f5300",
-"#ff9a82",
-"#f5d06c")
+myhue=c("#4477AA", "#77AADD", "#117777", "#44AAAA", "#77CCCC", "#117744","#ada77c","#44AA77","#114477","#88CCAA", "#777711", "#AAAA44", "#DDDD77", "#774411", "#AA7744", "#DDAA77", "#771122","#DD7788", "darkgoldenrod1", "#771155", "#AA4488", "#CC99BB","#AA7744", "#AA4455")
+
+#myhue = c("#02c3b9","#92006a","#01eeba","#320d66","#99b626","#b590ff","#398000","#9a0047","#90e894","#ff768d","#007e31","#e05f2f","#0188d1","#a66600","#3f5300","#ff9a82","#f5d06c")
 
 replace_rr <- function(rr){
   if(is.na(rr)) return(NA)
@@ -68,8 +54,10 @@ g_legend<-function(a.gplot){
 The metagenomics table for DC3000 requires some pre-processing
 ```{r}
 
-#meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/dc3000_infections/meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
-meta=read.table("~/Dropbox/controlled_metagenomics/data/dc3000_meta_family_corrected_per_plant_bacteria.csv", sep=",", header=T, row.names = 1)
+meta=read.table("~/work_main/abt6_projects9/metagenomic_controlled/data/processed_reads/dc3000_infections/meta_family_corrected_per_plant_v2_bacteria.csv", sep=",", header=T, row.names = 1)
+#meta=read.table("~/Dropbox/controlled_metagenomics/data/dc3000_meta_family_corrected_per_plant_bacteria.csv", sep=",", header=T, row.names = 1)
+meta2=read.table("~/Dropbox/controlled_metagenomics/data/dc3000_meta_family_corrected_per_plant_bacteria.csv", sep=",", header=T, row.names = 1)
+meta=meta[,which(colnames(meta)%in%colnames(meta2))]
 
 top10=names(sort(rowSums(meta, na.rm=TRUE), decreasing=TRUE )[1:10])
 meta_microbiome=meta[top10,]
@@ -227,7 +215,7 @@ cor.test(log10(all_keep$ratio+0.01), log10(all_keep$FINAL+1))
 cor.test(log10(all_keep$load), log10(all_keep$FINAL+1))
 ```
 
-####What is the correlation between load and colony counting?
+####What is the correlation between load and qPCR?
 ```{r, echo = FALSE}
 cor.test(log10(all_keep$ratio), log10(all_keep$load))
 ```
