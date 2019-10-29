@@ -47,7 +47,7 @@ g_legend<-function(a.gplot){
 ```
 
 ```{r, echo = FALSE}
-meta=read.table("~/Dropbox/controlled_metagenomics/data/dc3000_meta_family_corrected_per_plant.csv", sep=",", header=T, row.names = 1)
+meta=read.table("~/Dropbox/controlled_metagenomics/data/dc3000_meta_family_corrected_per_plant_v2_bacteria.csv", sep=",", header=T, row.names = 1)
 meta_pseud=melt(meta[c("Pseudomonadaceae"),], value.name="load", variable.name="Genotype")
 #meta_pseud$Genotype=rownames(meta_pseud)
 meta_pseud$day_ori=sapply(strsplit(as.character(meta_pseud$Genotype), "-"), `[`, 1)
@@ -73,7 +73,7 @@ But I really want to plot the wild distributions alongside this:
 ```{r, echo = FALSE}
 concat_name="_bacteria.csv"
 
-g_s=read.csv(paste("~/Dropbox/controlled_metagenomics/data//sweden_germany_combined", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+g_s=read.csv(paste("~/Dropbox/controlled_metagenomics/data/sweden_germany_combined", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
 g_s_otus <- g_s[,which(colnames(g_s)%ni%c("population", "country", "load"))]
 load_hist = data.frame(pseud = log10(g_s$Pseudomonadaceae + .01), sphingo = log10(g_s$Sphingomonadaceae + 0.01))
 

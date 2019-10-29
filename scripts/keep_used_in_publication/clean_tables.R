@@ -1,15 +1,17 @@
-#the goal of this script is to get the metagenome tables into a shape where they can be analyzed downstream. This is used in the publication
+#the goal of this script is to get the metagenome tables into a shape where they can be analyzed downstream. This is used in the publication and called by fig1_2_deseq_microbiome.Rmd
 #bacteria sweden
 #concat_name="bacteria.csv"
+library(intrval)
+library(dplyr)
 
 process_class<-function(concat_name){
   #bacteria germany ***NEED TO FIX DUPLICATES***
   german_samples=read.table("~/Dropbox/germany_pathogen_collections/sample_data/plate_sample_locations/sample_infoFinal_2018.txt", sep="\t", header=T, stringsAsFactors = FALSE)
   keep=german_samples #german_samples[-which(duplicated(german_samples$uniqueID)),]
   
-  meta_sweden=read.table(paste("~/Dropbox/controlled_metagenomics/data/swedish_meta_family_corrected_per_plant_", concat_name, sep=""), sep=",",header=T, row.names = 1, stringsAsFactors = FALSE)
+  meta_sweden=read.table(paste("~/Dropbox/controlled_metagenomics/data/swedish_meta_family_corrected_per_plant_v2_", concat_name, sep=""), sep=",",header=T, row.names = 1, stringsAsFactors = FALSE)
   
-  meta_german1=read.table(paste("~/Dropbox/controlled_metagenomics/data/german_meta_family_corrected_per_plant_", concat_name, sep=""), sep=",",header=T, row.names = 1, stringsAsFactors = FALSE)
+  meta_german1=read.table(paste("~/Dropbox/controlled_metagenomics/data/german_meta_family_corrected_per_plant_v2_", concat_name, sep=""), sep=",",header=T, row.names = 1, stringsAsFactors = FALSE)
 
   colnames(meta_sweden)=gsub( "_RunId0094_LaneId7","", colnames(meta_sweden))
   population=lapply(strsplit(colnames(meta_sweden), "\\."), "[[",1)
