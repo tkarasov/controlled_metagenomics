@@ -59,43 +59,162 @@ process_microb_melt<-function(meta, together){
   return(microb_melt)
 }
 
-plot_side_by_side<-function(out, colors){
-  max_y_axis=max(max(out$germany[,'value']), max(out$sweden[,'value'])) + 0.2*max(max(out$germany[,'value']), max(out$sweden[,'value']))
 
-  b_g = ggplot(data=out$germany, aes(x=Load, y=value, fill=Family))+ geom_bar(aes(), stat="identity", position="stack") +
+
+plot_side_by_side_inset<-function(out, out_small, colors){
+  max_y_axis=max(max(out$germany[,'value']), max(out$sweden[,'value'])) + 0.2*max(max(out$germany[,'value']), max(out$sweden[,'value']))
+  max_small=max(max(out_small$germany[,'value']), max(out_small$sweden[,'value'])) + 0.5*max(max(out_small$germany[,'value']), max(out_small$sweden[,'value']))
+  b_g = ggplot(data=out$germany, aes(x=Load, y=value, fill=Family)) + geom_bar(aes(), stat="identity", position="stack") +
     scale_fill_manual(values = colors) +
-    theme(legend.position="bottom", 
-          panel.background = element_blank(), 
-          axis.text.x = element_blank(), 
-          axis.title.x=element_blank() , 
-          axis.ticks.x=element_blank(), 
-          axis.title.y = element_blank(), 
-          legend.title = element_blank(), 
-          panel.border = element_rect(color = "gray50")) + 
-          #base_size = 11, base_family = "",
-          #base_line_size = base_size/22, base_rect_size = base_size/22) + 
-    guides(fill=guide_legend(nrow=5)) +
-    xlab("Plant Individuals") +
-    scale_y_continuous(expand = c(0, 0), limits = c(0, max_y_axis)) +
-    annotate("text",  x=Inf, y = Inf, label = "Germany", vjust=7, hjust=2, cex = 5) 
+    theme( 
+      panel.background = element_blank(), 
+      axis.line = element_line(),
+      text = element_text(size=9),
+      axis.text.x = element_blank(), 
+      axis.title.x=element_blank() , 
+      axis.ticks.x=element_blank(), 
+      axis.title.y = element_blank(),
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(),
+      legend.title = element_blank(),
+      panel.border = element_blank()) + 
+    scale_y_continuous(expand = c(0, 0), limits = c(0, max_y_axis))
+    #scale_x_discrete(breaks = NULL) +
+    #annotate("text",  x=Inf, y = Inf, label = "SW Germany", vjust=7, hjust=2, cex = 5)
   
   s_g = ggplot(data=out$sweden, aes(x=Load, y=value, fill=Family))+ geom_bar(aes(), stat="identity", position="stack") +
     scale_fill_manual(values = colors) +
-    theme(legend.position="bottom", panel.background = element_blank(), axis.text.x = element_blank(), axis.title.x=element_blank(), axis.line = element_line(color = "grey10") , axis.ticks.x=element_blank(), axis.title.y = element_blank(), legend.title = element_blank()) + 
-    guides(fill=guide_legend(nrow=3)) +
-    xlab("Plant Individuals") +
+    theme( 
+      panel.background = element_blank(), 
+      axis.line = element_line(),
+      text = element_text(size=9),
+      axis.text.x = element_blank(), 
+      axis.title.x=element_blank() , 
+      axis.ticks.x=element_blank(), 
+      axis.title.y = element_blank(),
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(),
+      legend.title = element_blank(),
+      panel.border = element_blank()) + 
     scale_y_continuous(expand = c(0, 0), limits = c(0, max_y_axis)) +
-    annotate("text",  x=Inf, y = Inf, label = "Sweden", vjust=7, hjust=2, cex = 5) 
+    #scale_x_discrete(breaks = NULL) +
+    #annotate("text",  x=Inf, y = Inf, label = "Sweden", vjust=7, hjust=2, cex = 5) +
+    guides(fill=guide_legend(ncol=3, keyheight = .75, keywidth = .75))
+  
+  b_g_small = ggplot(data=out_small$germany, aes(x=Load, y=value, fill=Family))+ geom_bar(aes(), stat="identity", position="stack",  show.legend = FALSE) +
+    scale_fill_manual(values = colors) +
+    theme( 
+      panel.background = element_blank(), 
+      text = element_text(size=9),
+      axis.text.x = element_blank(), 
+      axis.title.x=element_blank() , 
+      axis.ticks.x=element_blank(), 
+      axis.title.y = element_blank(), 
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(),
+      legend.title = element_blank(), 
+      panel.border = element_rect(color = "gray50")) + 
+    scale_y_continuous(expand = c(0, 0), limits = c(0, max_small)) +
+    scale_x_discrete(breaks = NULL)
+  
+  s_g_small = ggplot(data=out_small$sweden, aes(x=Load, y=value, fill=Family))+ geom_bar(aes(), stat="identity", position="stack",  show.legend = FALSE) +
+    scale_fill_manual(values = colors) +
+    theme( 
+      panel.background = element_blank(), 
+      text = element_text(size=9),
+      axis.text.x = element_blank(), 
+      axis.title.x=element_blank() , 
+      axis.ticks.x=element_blank(), 
+      axis.title.y = element_blank(), 
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(),
+      legend.title = element_blank(), 
+      panel.border = element_rect(color = "gray50")) + 
+    scale_y_continuous(expand = c(0, 0), limits = c(0, max_small)) +
+    scale_x_discrete(breaks = NULL)
+  
+  plotg.with.inset <-
+    ggdraw(b_g + theme(legend.position = "none")) +
+    draw_plot(b_g_small, x = .5, y = .3, hjust=0.40,  width = .7, height = 0.5)
+  
+  plots.with.inset <-
+    ggdraw() + draw_plot(s_g + theme(legend.position="none")) +
+    draw_plot(s_g_small, x = .5, y = .3, hjust=0.40,  width = .7, height = 0.5)
   
   grobs <- ggplotGrob(s_g)$grobs
   
   legend<-grobs[[which(sapply(grobs, function(x) x$name) == "guide-box")]]
   
-  pgrid <- plot_grid(b_g + theme(legend.position="none", panel.border = element_rect(colour = "grey10", fill=NA, size=1)), s_g + theme(legend.position="none", panel.border = element_rect(colour = "grey0", fill=NA, size=1)) + theme(axis.title.y=element_blank()), nrow = 2)
-  p <- plot_grid(pgrid, legend, nrow = 2, ncol=1, rel_heights = c(2, .45))
+  pgrid <- plot_grid(
+    plotg.with.inset + theme(legend.position="none"), 
+    plots.with.inset + theme(legend.position="none"), nrow = 2)
+  p <- plot_grid(pgrid, legend, nrow = 2, ncol = 1, rel_heights = c(4, 1), align = "v")
   
   p
 }
+
+
+
+
+
+plot_side_by_side<-function(out, colors){
+  max_y_axis=max(max(out$germany[,'value']), max(out$sweden[,'value'])) + 0.2*max(max(out$germany[,'value']), max(out$sweden[,'value']))
+
+  b_g = ggplot(data=out$germany, aes(x=Load, y=value, fill=Family)) + geom_bar(aes(), stat="identity", position="stack") +
+    scale_fill_manual(values = colors) +
+    theme( 
+      panel.background = element_blank(), 
+      axis.line = element_line(),
+      text = element_text(size=9),
+      axis.text.x = element_blank(), 
+      axis.title.x=element_blank() , 
+      axis.ticks.x=element_blank(), 
+      axis.title.y = element_blank(),
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(),
+      legend.title = element_blank(),
+      panel.border = element_blank()) + 
+    scale_y_continuous(expand = c(0, 0), limits = c(0, max_y_axis))
+  #scale_x_discrete(breaks = NULL) +
+  #annotate("text",  x=Inf, y = Inf, label = "SW Germany", vjust=7, hjust=2, cex = 5)
+  
+  s_g = ggplot(data=out$sweden, aes(x=Load, y=value, fill=Family))+ geom_bar(aes(), stat="identity", position="stack") +
+    scale_fill_manual(values = colors) +
+    theme( 
+      panel.background = element_blank(), 
+      axis.line = element_line(),
+      text = element_text(size=9),
+      axis.text.x = element_blank(), 
+      axis.title.x=element_blank() , 
+      axis.ticks.x=element_blank(), 
+      axis.title.y = element_blank(),
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(),
+      legend.title = element_blank(),
+      panel.border = element_blank()) + 
+    scale_y_continuous(expand = c(0, 0), limits = c(0, max_y_axis)) +
+    #scale_x_discrete(breaks = NULL) +
+    #annotate("text",  x=Inf, y = Inf, label = "Sweden", vjust=7, hjust=2, cex = 5) +
+    guides(fill=guide_legend(ncol=3, keyheight = .75, keywidth = .75))
+  
+  plotg <-
+    ggdraw(b_g + theme(legend.position = "none")) 
+  
+  plots <-
+    ggdraw() + draw_plot(s_g + theme(legend.position="none"))
+  
+  grobs <- ggplotGrob(s_g)$grobs
+  
+  legend<-grobs[[which(sapply(grobs, function(x) x$name) == "guide-box")]]
+  
+  pgrid <- plot_grid(
+    plotg + theme(legend.position="none"), 
+    plots + theme(legend.position="none"), nrow = 2)
+  p <- plot_grid(pgrid, legend, nrow = 2, ncol = 1, rel_heights = c(4, 1))
+  
+  p
+}
+
 
 
 reduce_melted <- function(out, cutoff){
@@ -142,7 +261,7 @@ process_gs<-function(g_s, subset=FALSE, classifier=cf, classifier_identity=cfi){
   else{
     g_temp<-g_s
   }
-  g_s_otus <- g_temp[,which(colnames(g_temp)%ni%c("population", "country", "load"))]
+  g_s_otus <- g_temp[,which(colnames(g_temp)%ni%c("population", "country", "load", "Coverage", "Genotype", "Coverage"))]
   g_s_load <-g_temp$load[which(apply((g_s_otus), 1, var)!=0)]
   g_s_pop <-g_temp$population[which(apply((g_s_otus), 1, var)!=0)]
   g_s_country <-g_temp$country[which(apply((g_s_otus), 1, var)!=0)]

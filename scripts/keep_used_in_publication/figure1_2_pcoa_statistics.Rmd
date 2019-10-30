@@ -430,6 +430,14 @@ find_top_abundance(g_s_otus_filter)
 ```
 
 
+What about if I look at the raw read tables?
+```{r}
+
+
+```
+
+
+
 What is the relationship between load and PC1?
 #```{r}
 cor.test(g_s_load, pc1)

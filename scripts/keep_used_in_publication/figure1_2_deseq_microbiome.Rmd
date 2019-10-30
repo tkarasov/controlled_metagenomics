@@ -120,8 +120,9 @@ First we will look at those reads classified as bacterial. We will perform princ
 
 ```{r}
 concat_name="_bacteria.csv"
-g_s1=read.csv(paste("~/Dropbox/controlled_metagenomics/data/sweden_germany_combined", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+#g_s1=read.csv(paste("~/Dropbox/controlled_metagenomics/data/sweden_germany_combined", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
 g_s1$Genotype = rownames(g_s1)
+
 #Two samples are messed up
 #g_s = g_s[which(rownames(g_s %ni% c("ULL.5", "Adal.5"), ]
 #Merge the data table with the A. thaliana coverage
@@ -144,28 +145,28 @@ plot(x=(log10(otu_table(physeq)[,1])), y=pca_out$rotation[,1], pch = 20, xlab = 
 But removing samples with low coverage doesn't fix the problem. With PCA, the results are just too influenced by the outliers. So let's give up on just doing PCA on the deseq samples. What about if i want to look at the differential loads between Sweden and Germany. I think we should do this with all of the reads readjusted.
 
 ```{r}
-g_s1=read.csv(paste("~/Dropbox/controlled_metagenomics/data/sweden_germany_combined", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
-g_s1$Genotype = rownames(g_s1)
+#g_s1=read.csv(paste("~/Dropbox/controlled_metagenomics/data/sweden_germany_combined", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+#g_s1$Genotype = rownames(g_s1)
 #Two samples are messed up
 #g_s = g_s[which(rownames(g_s %ni% c("ULL.5", "Adal.5"), ]
 #Merge the data table with the A. thaliana coverage
 g_s = inner_join(athal_cov, g_s1)
 g_s_otus <- g_s[,which(colnames(g_s)%ni%c("population", "country", "load", "Genotype"))]
-physeq = merge_phyloseq(g_s)
+physeq = my_merge_phyloseq(g_s)
 
 ```
 
 
 
 ```{r}
-concat_name="_bacteria.csv"
-g_s1=read.csv(paste("~/Dropbox/controlled_metagenomics/data/sweden_germany_combined", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
-g_s1$Genotype = rownames(g_s1)
+#concat_name="_bacteria.csv"
+#g_s1=read.csv(paste("~/Dropbox/controlled_metagenomics/data/sweden_germany_combined", concat_name, sep=''), header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+#g_s1$Genotype = rownames(g_s1)
 #Two samples are messed up
 #g_s = g_s[which(rownames(g_s %ni% c("ULL.5", "Adal.5"), ]
 #Merge the data table with the A. thaliana coverage
-g_s = inner_join(athal_cov, g_s1)
-physeq = my_merge_phyloseq(g_s)
+#g_s = inner_join(athal_cov, g_s1)
+#physeq = my_merge_phyloseq(g_s)
 
 deseq_country = phyloseq_to_deseq2(physeq, ~Country)
 country_wald = DESeq(deseq_country, test="Wald", fitType="mean")
@@ -205,10 +206,10 @@ ggplot(sigtab, aes(x=Family, y=log2FoldChange, color=log10(pvalue))) + geom_poin
   theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust=0.5))
 ```
 
-```
 
 
-````{r}
+
+```{r}
 phy_deseq_stab = deseq_variance_stab(physeq, deseq_country)
 
 # Now, we re-do the ordination

@@ -1,0 +1,226 @@
+---
+title: "Microbiome analysis of Germany and Sweden"
+author: "Talia_Karasov"
+date: "5/3/2019"
+output: html_document
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width = 12, fig.height = 8, fig.path ='Figs/',
+                      echo = FALSE, warning = FALSE, message = FALSE, cache = TRUE)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(reshape2)
+library('dplyr')
+library('tidyr')
+library(ggplot2)
+library(RColorBrewer)
+library(wesanderson)
+library(matrixStats)
+require(gridExtra)
+library(cowplot)
+#library(moments)
+library(intrval)
+library("Hmisc")
+library(ape)
+library(cowplot)
+library(vegan)
+library(extrafont)
+library(lme4)
+library(ape)
+library(ggthemes)
+library(knitr)
+#font_import()
+loadfonts()
+
+source("~/Dropbox/controlled_metagenomics/scripts/keep_used_in_publication/controlled_metagenomics_functions.R")
+
+#hue1_12 = c("#02c3b9","#92006a","#01eeba","#320d66","#99b626","#b590ff","#398000","#9a0047","#90e894","#ff768d")
+
+hue1_12 = c("#ada77c","#4477AA", "#77AADD", "#117777", "#44AAAA", "#77CCCC", "#117744", "#44AA77","#114477","#88CCAA", "#777711", "#AAAA44")
+hue13_25 = c("#DDDD77", "#774411", "#AA7744", "#DDAA77", "#771122","#DD7788", "darkgoldenrod1", "#771155", "#AA4488", "#CC99BB","#AA7744", "#AA4455")
+hue15_25 = c("#771122","#DD7788", "darkgoldenrod1", "#771155", "#AA4488", "#CC99BB","#AA7744", "#AA4455")
+
+
+
+adonis2_sim <-function(select_g_s , populations = populations){
+  i = 0 
+  keep_pop = matrix(ncol = 7, nrow = 9)
+  rownames(keep_pop) = populations
+  for(rec in populations){
+    i = i+1
+    subset = which(g_s_pop_com == rec)
+    sampling = sample(subset, 7, replace = FALSE)
+    keep_pop[i,] = sampling
+  }
+  
+  g_s_subset = data.frame(select_g_s[unlist(keep_pop),])
+  bc_limited = bc_comp[unlist(keep_pop), unlist(keep_pop)]
+  adonis_output = adonis2(bc_limited ~ g_s_subset$country / g_s_subset$pop + g_s_subset$load, strata = g_s_subset$country)
+  return(adonis_output)
+}
+```
+
+#Load vs. microbiome composition
+This script explores the relationship between load and microbiome for the german and swedish datasets and graphs the microbiomes of these datasets
+
+###Filtering
+First thing is to remove the offending columns from the german dataset and then to combine the metagenome files. These tasks are done with the clean_tables script:
+```{r, echo = TRUE}
+source("~/Dropbox/controlled_metagenomics/scripts/keep_used_in_publication/clean_tables.R")
+```
+
+
+###Analysis
+####Overall Comparison of Composition
+The goal of this next part is to generate figures side-by-side that will take the metagenome corrected tables for germany and sweden and graph the bar plots next to one another
+
+OK, now we never have to deal with filtering again. Now we want to generate the side by side histograms of loads
+```{r, echo = FALSE}
+out_bacteria = meta_table("bacteria")
+grouped_german = out_bacteria$germany %>% group_by(Family) 
+grouped_sweden =  out_bacteria$sweden %>% group_by(Family) 
+
+#This smaller subset is the lower three quantiles of load
+out_bac_small = reduce_melted(out_bacteria, 0.75)
+
+#p_bac = plot_side_by_side(out_bacteria, colors = hue1_12) 
+p_bac = plot_side_by_side_inset(out_bacteria, out_bac_small, colors = hue1_12)
+#p_bac_small = plot_side_by_side(out_bac_small, hue1_12)
+
+out_fungi = meta_table("fungi")
+out_fungi_small = reduce_melted(out_fungi, 0.75)
+p_fungi = plot_side_by_side_inset(out_fungi, out_fungi_small, colors = hue15_25)
+
+out_oom=meta_table("oomycete")
+out_oom_small = reduce_melted(out_oom, 0.75)
+
+p_oom = plot_side_by_side_inset(out_oom, out_oom_small, colors = hue13_25)
+#p_oom_small = plot_side_by_side(out_oom_small, hue13_25)
+
+grouped_german = out_fungi$germany %>% group_by(Family) 
+grouped_sweden =  out_fungi$sweden %>% group_by(Family) 
+
+print("German Bacteria")
+summarise(grouped_german, mean = mean(value, na.rm = TRUE)) %>% arrange(mean)
+
+print("Swedish Bacteria")
+summarise(grouped_sweden, mean = mean(value, na.rm = TRUE)) %>% arrange(mean)
+#p_bac = plot_side_by_side(out_bacteria, colors = sample(RColorBrewer::brewer.pal(n=9, 'Paired'),9))
+
+print("German Fungi")
+summarise(grouped_german, mean = mean(value, na.rm = TRUE)) %>% arrange(mean)
+
+print("Swedish Fungi")
+summarise(grouped_sweden, mean = mean(value, na.rm = TRUE)) %>% arrange(mean)
+#p_fungi=plot_side_by_side(out_fungi, colors = sample(RColorBrewer::brewer.pal(n=9, 'Paired'),9))
+
+out_oom=meta_table("oomycete")
+grouped_german = out_oom$germany %>% group_by(Family) 
+grouped_sweden =  out_oom$sweden %>% group_by(Family) 
+
+print("German Oomycetes")
+summarise(grouped_german, mean = mean(value, na.rm = TRUE)) %>% arrange(mean)
+
+print("Swedish Oomycetes")
+summarise(grouped_sweden, mean = mean(value, na.rm = TRUE)) %>% arrange(mean)
+#p_oom=plot_side_by_side(out_oom, colors = sample(RColorBrewer::brewer.pal(n=8, 'Dark2'),8))
+```
+
+Plot histogram of total loads of Oomycete, Fungi and Bacteria
+```{r}
+bacteria_germany = out_bacteria$germany %>% group_by(variable) %>% summarise("Total_Load"=sum(value))
+bacteria_sweden  = out_bacteria$sweden %>% group_by(variable) %>% summarise("Total_Load"=sum(value))
+bacteria = (data.frame("Total_Load" = c(bacteria_germany$Total_Load, bacteria_sweden$Total_Load)))
+
+fungi_germany = out_fungi$germany %>% group_by(variable) %>% summarise("Total_Load"=sum(value))
+fungi_sweden  = out_fungi$sweden %>% group_by(variable) %>% summarise("Total_Load"=sum(value))
+fungi = (data.frame("Total_Load" = c(fungi_germany$Total_Load, fungi_sweden$Total_Load))) 
+
+oomycete_germany = out_oom$germany %>% group_by(variable) %>% summarise("Total_Load"=sum(value))
+oomycete_sweden  = out_oom$sweden %>% group_by(variable) %>% summarise("Total_Load"=sum(value))
+oomycete = (data.frame("Total_Load" = c(oomycete_germany$Total_Load, oomycete_sweden$Total_Load)))
+
+b_1 = ggplot(data = bacteria, aes(Total_Load)) +
+  geom_histogram( bins = 40) +
+  theme_tufte_revised() + 
+  theme(text = element_text(size=7)) +
+  xlab("") +
+  annotate("text",  x = Inf, y = Inf, label = "Bacteria", cex = 5, hjust = 2, vjust = 2) 
+
+f_1 = ggplot(data = fungi, aes(Total_Load)) +
+  geom_histogram( bins = 40) +
+  theme_tufte_revised() + 
+  theme(text = element_text(size=7)) +
+  xlab("") +
+  annotate("text",  x = Inf, y = Inf, label = "Fungi", vjust=2, hjust=2, cex = 5) 
+
+o_1 = ggplot(data = oomycete, aes(Total_Load)) +
+  geom_histogram( bins = 40) +
+  theme_tufte_revised() + 
+  theme(text = element_text(size=7)) +
+  xlab("Total Load") +
+  annotate("text",  x = Inf, y = Inf, label = "Oomycetes", hjust = 2, vjust = 2, cex = 5) 
+
+
+all_three = plot_grid(b_1, o_1, f_1, nrow = 3, labels = c("a", "b", "c"), align = "v")
+
+pdf("~/Dropbox/controlled_metagenomics/results_figures/hist_load.pdf", width = 2.46, height = 5, family = "ArialMT" )
+all_three
+dev.off()
+```
+
+The average load of bacteria is:
+```{r}
+summarise(bacteria, mean = mean(Total_Load), sd = sd(Total_Load))
+```
+
+The average load of fungi is:
+```{r}
+summarise(fungi, mean = mean(Total_Load), sd = sd(Total_Load))
+```
+
+The average load of oomycete is:
+```{r}
+summarise(oomycete, mean = mean(Total_Load), sd = sd(Total_Load))
+```
+
+\
+These are the side-by-side histogram plots
+```{r }
+p_tot=plot_grid(p_bac, p_oom, ncol=2, align = 'h')
+p_tot
+
+#pdf("~/Dropbox/controlled_metagenomics/results_figures/oomycete_bacteria_germany_sweden.pdf", family = "ArialMT", width = 8, height = 5)
+#p_tot
+#dev.off()
+
+#pdf("~/Dropbox/controlled_metagenomics/results_figures/oomycete_germany_sweden.pdf", family = "ArialMT", height = 5, width = 5)
+#p_oom
+#dev.off()
+
+
+#pdf("~/Dropbox/controlled_metagenomics/results_figures/bacteria_germany_sweden.pdf", family = "ArialMT", height = 5, width = 5)
+#p_bac
+#dev.off()
+
+
+
+#pdf("~/Dropbox/controlled_metagenomics/results_figures/small_bacteria_germany_sweden.pdf", family = "ArialMT", height = 2.5, width = 2.5)
+#p_bac_small
+#dev.off()
+#pdf("~/Dropbox/controlled_metagenomics/results_figures/small_oomycete_germany_sweden.pdf", family = "ArialMT", height = 2.5, width = 2.5)
+#p_oom_small
+#dev.off()
+#df("~/Dropbox/controlled_metagenomics/results_figures/fungi_germany_sweden.pdf", family = "ArialMT", height = 5, width = 5)
+#p_fungi
+#dev.off()
+ggsave("~/Dropbox/controlled_metagenomics/results_figures/oomycete_germany_sweden.pdf", p_oom, family = "ArialMT", height = 3.14, width = 3.14)
+
+ggsave("~/Dropbox/controlled_metagenomics/results_figures/bacteria_germany_sweden.pdf", p_bac, family = "ArialMT", height = 3.14, width = 3.14)
+
+ggsave("~/Dropbox/controlled_metagenomics/results_figures/fungi_germany_sweden.pdf", p_fungi, family = "ArialMT", height = 3.14, width = 3.14)
+```
+
+Note that the saved stacked barpplots have some extra layer placed over them. Just need to delete the area in illustrator
