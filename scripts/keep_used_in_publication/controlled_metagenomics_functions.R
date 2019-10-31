@@ -272,7 +272,7 @@ process_gs<-function(g_s, subset=FALSE, classifier=cf, classifier_identity=cfi){
   #Next taxa that are absent
   g_s_otus <-g_s_otus[which(apply(t(g_s_otus), 2, var)!=0),]
   
-  #remove families that are found at an average
+  #remove families that are are found at less than an average of < 0.001%
   keep_0.001 <- which(colSums(g_s_otus)/dim(g_s_otus)[1]>0.00001)
   g_s_otus_filter <- g_s_otus[,keep_0.001]
   

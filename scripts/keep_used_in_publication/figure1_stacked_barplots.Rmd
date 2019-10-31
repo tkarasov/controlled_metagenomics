@@ -42,24 +42,6 @@ hue1_12 = c("#ada77c","#4477AA", "#77AADD", "#117777", "#44AAAA", "#77CCCC", "#1
 hue13_25 = c("#DDDD77", "#774411", "#AA7744", "#DDAA77", "#771122","#DD7788", "darkgoldenrod1", "#771155", "#AA4488", "#CC99BB","#AA7744", "#AA4455")
 hue15_25 = c("#771122","#DD7788", "darkgoldenrod1", "#771155", "#AA4488", "#CC99BB","#AA7744", "#AA4455")
 
-
-
-adonis2_sim <-function(select_g_s , populations = populations){
-  i = 0 
-  keep_pop = matrix(ncol = 7, nrow = 9)
-  rownames(keep_pop) = populations
-  for(rec in populations){
-    i = i+1
-    subset = which(g_s_pop_com == rec)
-    sampling = sample(subset, 7, replace = FALSE)
-    keep_pop[i,] = sampling
-  }
-  
-  g_s_subset = data.frame(select_g_s[unlist(keep_pop),])
-  bc_limited = bc_comp[unlist(keep_pop), unlist(keep_pop)]
-  adonis_output = adonis2(bc_limited ~ g_s_subset$country / g_s_subset$pop + g_s_subset$load, strata = g_s_subset$country)
-  return(adonis_output)
-}
 ```
 
 #Load vs. microbiome composition
@@ -223,4 +205,4 @@ ggsave("~/Dropbox/controlled_metagenomics/results_figures/bacteria_germany_swede
 ggsave("~/Dropbox/controlled_metagenomics/results_figures/fungi_germany_sweden.pdf", p_fungi, family = "ArialMT", height = 3.14, width = 3.14)
 ```
 
-Note that the saved stacked barpplots have some extra layer placed over them. Just need to delete the area in illustrator
+Note that the saved stacked barpplots have some extra layer placed over them. Just need to delete the area in illustrator.
