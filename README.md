@@ -32,6 +32,7 @@ The manuscript used the pipeline relevant for centrifuge.
 * [The actual analysis script to recalibrate the output from centrifuge to genome coverage](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/recalibrate_metagenome_table_centrifuge_v2.py)
 
 #### Scripts for Figure generation
+* [Folder for scripts for figure generation]https://github.com/tkarasov/controlled_metagenomics/tree/master/scripts/keep_used_in_publication
 
 ## DATA 
 #### For metagenome classification and normalization
