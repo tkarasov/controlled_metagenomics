@@ -1,21 +1,21 @@
-### Max Planck Institute for Developmental Biology
+## Max Planck Institute for Developmental Biology
 #### Talia Karasov
 This repository contains scripts related to the controlled metagenomic infections performed in 2018 and 2019
 
-## DEPENDENCIES
-### Read Mapping of Plant and Metagenome
+### DEPENDENCIES
+#### Read Mapping of Plant and Metagenome
 * [python3](https://www.python.org/download/releases/3.0/)
 * [bwa (version 0.7.17-r1188)](https://github.com/lh3/bwa)
 * [picard (version 2.17.3)](https://broadinstitute.github.io/picard/)
 * [samtools (version 1.6-19-g1c03df6(using htslib 1.6-53-ge539b32)](http://www.htslib.org/)
 * [centrifuge (version 1.0.4)](https://ccb.jhu.edu/software/centrifuge/manual.shtml)
 
-### Analysis of metagenomes post-centrifuge
+#### Analysis of metagenomes post-centrifuge
 * [R (version 3.5.3)](https://www.r-project.org/)
 * Major R packages
   * [vegan (version 2.5.5)](https://cran.r-project.org/web/packages/vegan/index.html)
 
-## SCRIPTS
+### SCRIPTS
 #### The general pipeline for assessing metagenomic load can be found in this repository though there is a lot of unrelated code here.
 * https://github.com/tkarasov/metagenomics_pipeline
 
@@ -41,12 +41,12 @@ The manuscript used the pipeline for centrifuge.
 * [Deseq: Variance stabilization between Sweden and Germany](https://github.com/tkarasov/controlled_metagenomics/blob/master/scripts/keep_used_in_publication/figureX_deseq_fin.Rmd)
 
 
-## DATA 
+### DATA 
 #### For metagenome classification and normalization
 * [The ncbi taxonomy tree used for family-wise calculation of load](https://github.com/tkarasov/metagenomics_pipeline/blob/master/data/megan_genus_tree_10_2_2018.tre)
 * [The ncbi genome size file](https://github.com/tkarasov/metagenomics_pipeline/blob/master/data/genomes.csv)
 
-### Field trials
+#### Field trials
 * Swedish metagenome table for oomycete:
   * [Bacteria](https://github.com/tkarasov/controlled_metagenomics/blob/master/data/swedish_meta_family_corrected_per_plant_bacteria.csv)
   * [Oomycetes](https://github.com/tkarasov/controlled_metagenomics/blob/master/data/swedish_meta_family_corrected_per_plant_oomycete.csv)
