@@ -1,5 +1,5 @@
 ### Max Planck Institute for Developmental Biology
-##### Talia Karasov
+#### Talia Karasov
 This repository contains scripts related to the controlled metagenomic infections performed in 2018 and 2019
 
 ## DEPENDENCIES
@@ -16,10 +16,10 @@ This repository contains scripts related to the controlled metagenomic infection
   * [vegan (version 2.5.5)](https://cran.r-project.org/web/packages/vegan/index.html)
 
 ## SCRIPTS
-#### The general pipeline for assessing metagenomic load can be found in this repository
+#### The general pipeline for assessing metagenomic load can be found in this repository though there is a lot of unrelated code here.
 * https://github.com/tkarasov/metagenomics_pipeline
 
-The manuscript used the pipeline relevant for centrifuge. 
+The manuscript used the pipeline for centrifuge. 
 * [Script to run the whole pipeline](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/final_centrifuge_total_pipeline.sh)
 
 #### Script-by-Script rundown of the Pipeline to build the metagenome table
