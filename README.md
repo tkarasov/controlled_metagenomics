@@ -28,8 +28,8 @@ The manuscript used the pipeline relevant for centrifuge.
 * [Script to make kreport](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/centrifuge_total_step2_v2.sh)
 * [Script to recalibrate kreport](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/centrifuge_total_step3_v2.sh)
 * [Script to subsample centrifuge output to look at normalized data](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/subsample_centrifuge_table.py)
-* [Deprecated script to separate fungal, oomycete and bacterial reads output from centrfiuge](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/classify_eukaryote_prokaryote.py)
-* [Deprecate script to recalibrate metagenomic output from centrifuge](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/recalibrate_metagenome_table_centrifuge.py)
+* [Script to separate fungal, oomycete and bacterial reads output from centrfiuge](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/classify_eukaryote_prokaryote.py)
+* [The actual analysis script to recalibrate the output from centrifuge to genome coverage](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/recalibrate_metagenome_table_centrifuge_v2.py)
 
 #### Scripts for Figure generation
 
