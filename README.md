@@ -31,8 +31,15 @@ The manuscript used the pipeline relevant for centrifuge.
 * [Script to separate fungal, oomycete and bacterial reads output from centrfiuge](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/classify_eukaryote_prokaryote.py)
 * [The actual analysis script to recalibrate the output from centrifuge to genome coverage](https://github.com/tkarasov/metagenomics_pipeline/blob/master/centrifuge/recalibrate_metagenome_table_centrifuge_v2.py)
 
-#### Scripts for Figure generation
-* [Folder for scripts for figure generation]https://github.com/tkarasov/controlled_metagenomics/tree/master/scripts/keep_used_in_publication
+#### Scripts for Figure generation and statistics
+* [Folder for scripts for figure generation] (https://github.com/tkarasov/controlled_metagenomics/tree/master/scripts/keep_used_in_publication)
+* [Figure 1: Stacked barplots](https://github.com/tkarasov/controlled_metagenomics/blob/master/scripts/keep_used_in_publication/figure1_stacked_barplots.Rmd)
+* [Figure 2: Diversity measurements](https://github.com/tkarasov/controlled_metagenomics/blob/master/scripts/keep_used_in_publication/figure2_diversity_real.Rmd)
+* [Figure 2: PCoA](https://github.com/tkarasov/controlled_metagenomics/blob/master/scripts/keep_used_in_publication/figure1_2_pcoa_statistics.Rmd)
+* [Figure 3: Lab comparisons (DC3000)](https://github.com/tkarasov/controlled_metagenomics/tree/master/scripts/keep_used_in_publication/https://github.com/tkarasov/controlled_metagenomics/blob/master/scripts/keep_used_in_publication/figure3_dc3000_reads_metagenome.Rmd)
+* [Figure 3: Lab comparisons (HpA)](https://github.com/tkarasov/controlled_metagenomics/tree/master/scripts/keep_used_in_publication/https://github.com/tkarasov/controlled_metagenomics/blob/master/scripts/keep_used_in_publication/figure3_hpa_reads_metagenome.Rmd)
+* [Deseq:Variance stabilization between Sweden and Germany ] (https://github.com/tkarasov/controlled_metagenomics/blob/master/scripts/keep_used_in_publication/figureX_deseq_fin.Rmd)
+
 
 ## DATA 
 #### For metagenome classification and normalization
