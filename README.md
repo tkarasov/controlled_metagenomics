@@ -38,7 +38,7 @@ The manuscript used the pipeline relevant for centrifuge.
 * [Figure 2: PCoA](https://github.com/tkarasov/controlled_metagenomics/blob/master/scripts/keep_used_in_publication/figure1_2_pcoa_statistics.Rmd)
 * [Figure 3: Lab comparisons (DC3000)](https://github.com/tkarasov/controlled_metagenomics/tree/master/scripts/keep_used_in_publication/https://github.com/tkarasov/controlled_metagenomics/blob/master/scripts/keep_used_in_publication/figure3_dc3000_reads_metagenome.Rmd)
 * [Figure 3: Lab comparisons (HpA)](https://github.com/tkarasov/controlled_metagenomics/tree/master/scripts/keep_used_in_publication/https://github.com/tkarasov/controlled_metagenomics/blob/master/scripts/keep_used_in_publication/figure3_hpa_reads_metagenome.Rmd)
-* [Deseq:Variance stabilization between Sweden and Germany ] (https://github.com/tkarasov/controlled_metagenomics/blob/master/scripts/keep_used_in_publication/figureX_deseq_fin.Rmd)
+* [Deseq: Variance stabilization between Sweden and Germany](https://github.com/tkarasov/controlled_metagenomics/blob/master/scripts/keep_used_in_publication/figureX_deseq_fin.Rmd)
 
 
 ## DATA 
