@@ -1,6 +1,9 @@
 ## Max Planck Institute for Developmental Biology
 #### Talia Karasov
-This repository contains scripts related to the controlled metagenomic infections performed in 2018 and 2019
+This repository contains scripts related to the controlled metagenomic infections performed in 2018 and 2019 and described here:
+https://www.biorxiv.org/content/10.1101/828814v1
+
+The study analyzes the ratio of microbial reads to plant reads in *Arabidopsis thaliana* populations in Sweden and Germany to determine which microbes reach high relative abundances. To determine the relationship between load and disease we then compare the load measurements to measurements of disease progression from the laboratory.
 
 ### DEPENDENCIES
 #### Read Mapping of Plant and Metagenome
